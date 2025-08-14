@@ -3,7 +3,7 @@ export const config = {
   appUrl: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   isDevelopment: process.env.NODE_ENV === "development",
   isProduction: process.env.NODE_ENV === "production",
-};
+}
 
 // 環境に応じたAPI URLの自動設定
 export const getApiUrl = () => {
@@ -11,8 +11,8 @@ export const getApiUrl = () => {
   if (config.isProduction && !process.env.NEXT_PUBLIC_API_URL) {
     // Vercelの場合の自動設定例
     if (process.env.VERCEL_URL) {
-      return `https://api-${process.env.VERCEL_URL}/api`;
+      return `https://api-${process.env.VERCEL_URL}/api`
     }
   }
-  return config.apiUrl;
-};
+  return config.apiUrl
+}

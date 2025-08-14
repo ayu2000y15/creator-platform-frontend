@@ -49,10 +49,17 @@ api.interceptors.response.use(
     })
 
     if (error.response?.status === 401) {
-      // 認証エラーの場合、トークンを削除してログインページにリダイレクト
+      // 認証エラーの場合、トークンを削除
       if (typeof window !== "undefined") {
         localStorage.removeItem("auth_token")
-        window.location.href = "/login"
+
+        // 初期化時のユーザー情報取得エラーの場合はリダイレクトしない
+        const isInitialUserFetch = error.config?.url?.includes("/user") && error.config?.method === "get"
+
+        if (!isInitialUserFetch) {
+          // 通常のAPI呼び出しでの401エラーの場合のみリダイレクト
+          window.location.href = "/login"
+        }
       }
     }
     return Promise.reject(error)

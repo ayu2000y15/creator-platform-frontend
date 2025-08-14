@@ -64,6 +64,8 @@ export default function LoginPage() {
       const result = await login(email, password)
 
       if (result.requiresTwoFactor) {
+        sessionStorage.setItem("two_factor_email", email)
+        sessionStorage.setItem("two_factor_method", result.twoFactorMethod || "app")
         router.push("/login/two-factor")
       } else {
         router.push("/dashboard")
@@ -71,13 +73,20 @@ export default function LoginPage() {
     } catch (err: any) {
       console.error("Login error:", err)
 
+      if (err.response?.data?.two_factor) {
+        sessionStorage.setItem("two_factor_email", email)
+        sessionStorage.setItem("two_factor_method", err.response.data.two_factor_method || "app")
+        router.push("/login/two-factor")
+        return
+      }
+
       let errorMessage = "ログインに失敗しました。"
 
       if (err.response?.status === 422) {
         const errors = err.response?.data?.errors
         if (errors) {
           const errorList = Object.entries(errors)
-            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`)
+            .map(([field, messages]) => (Array.isArray(messages) ? messages.join(", ") : messages))
             .join(" | ")
           errorMessage = `入力エラー: ${errorList}`
         } else {

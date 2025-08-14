@@ -1,21 +1,39 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { authApi, type User, type TwoFactorChallengeData } from "@/lib/auth-api"
+import {
+  authApi,
+  type User,
+  type TwoFactorChallengeData,
+  type UpdateProfileData,
+  type ChangePasswordData,
+} from "@/lib/auth-api"
 
 interface AuthContextType {
   user: User | null
-  login: (email: string, password: string) => Promise<{ requiresTwoFactor?: boolean }>
+  login: (
+    email: string,
+    password: string,
+  ) => Promise<{ requiresTwoFactor?: boolean; twoFactorMethod?: "app" | "email" }>
   register: (name: string, email: string, password: string) => Promise<void>
   registerWithEmail: (email: string) => Promise<void>
   verifyEmailAndCompleteRegistration: (email: string, code: string, name: string, password: string) => Promise<void>
   logout: () => Promise<void>
   twoFactorChallenge: (data: TwoFactorChallengeData) => Promise<void>
+  emailTwoFactorChallenge: (email: string, code: string) => Promise<void>
   enableTwoFactor: () => Promise<any>
   disableTwoFactor: () => Promise<void>
+  enableEmailTwoFactor: () => Promise<void>
+  disableEmailTwoFactor: () => Promise<void>
+  updateProfile: (data: UpdateProfileData) => Promise<void>
+  changePassword: (data: ChangePasswordData) => Promise<void>
+  refreshUser: () => Promise<void>
   loading: boolean
   isAuthenticated: boolean
   requiresTwoFactor: boolean
+  resendVerificationEmail: () => Promise<void>
+  checkEmailVerification: () => Promise<boolean>
+  verifyEmail: (id: string, hash: string, signature: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -25,7 +43,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false)
 
-  // 初期化時にトークンからユーザー情報を取得
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem("auth_token")
@@ -33,8 +50,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const userData = await authApi.getUser()
           setUser(userData)
-        } catch (error) {
+        } catch (error: any) {
+          console.log("Token validation failed, clearing auth state")
           localStorage.removeItem("auth_token")
+          setUser(null)
+          // エラーを再スローしない（静かに失敗させる）
         }
       }
       setLoading(false)
@@ -51,7 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.two_factor) {
         setRequiresTwoFactor(true)
-        return { requiresTwoFactor: true }
+        const twoFactorMethod = response.two_factor_method || "app"
+        return { requiresTwoFactor: true, twoFactorMethod }
       }
 
       localStorage.setItem("auth_token", response.token)
@@ -121,12 +142,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const emailTwoFactorChallenge = async (email: string, code: string) => {
+    try {
+      const response = await authApi.verifyEmailTwoFactorCode({ email, code })
+      localStorage.setItem("auth_token", response.token)
+      setUser(response.user)
+      setRequiresTwoFactor(false)
+    } catch (error) {
+      throw error
+    }
+  }
+
   const enableTwoFactor = async () => {
     try {
+      if (user?.email_two_factor_enabled) {
+        await authApi.disableEmailTwoFactor()
+      }
+
       const response = await authApi.enableTwoFactor()
       // ユーザー情報を更新
       if (user) {
-        setUser({ ...user, two_factor_enabled: true })
+        setUser({
+          ...user,
+          two_factor_enabled: true,
+          email_two_factor_enabled: false, // メール認証を無効にする
+        })
       }
       return response
     } catch (error) {
@@ -136,11 +176,81 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const disableTwoFactor = async () => {
     try {
-      await authApi.disableTwoFactor()
+      if (user?.two_factor_confirmed_at) {
+        await authApi.disableTwoFactor()
+      }
+      if (user?.email_two_factor_enabled) {
+        await authApi.disableEmailTwoFactor()
+      }
+
       // ユーザー情報を更新
       if (user) {
-        setUser({ ...user, two_factor_enabled: false })
+        setUser({
+          ...user,
+          two_factor_enabled: false,
+          two_factor_confirmed_at: null,
+          email_two_factor_enabled: false,
+        })
       }
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const enableEmailTwoFactor = async () => {
+    try {
+      if (user?.two_factor_confirmed_at) {
+        await authApi.disableTwoFactor()
+      }
+
+      await authApi.enableEmailTwoFactor()
+      // ユーザー情報を更新
+      if (user) {
+        setUser({
+          ...user,
+          email_two_factor_enabled: true,
+          two_factor_confirmed_at: null, // アプリ認証を無効にする
+          two_factor_enabled: false,
+        })
+      }
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const disableEmailTwoFactor = async () => {
+    try {
+      await authApi.disableEmailTwoFactor()
+      // ユーザー情報を更新
+      if (user) {
+        setUser({ ...user, email_two_factor_enabled: false })
+      }
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const updateProfile = async (data: UpdateProfileData) => {
+    try {
+      const updatedUser = await authApi.updateProfile(data)
+      setUser(updatedUser)
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const changePassword = async (data: ChangePasswordData) => {
+    try {
+      await authApi.changePassword(data)
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const refreshUser = async () => {
+    try {
+      const userData = await authApi.getUser()
+      setUser(userData)
     } catch (error) {
       throw error
     }
@@ -159,6 +269,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const resendVerificationEmail = async () => {
+    try {
+      await authApi.resendVerificationEmail()
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const checkEmailVerification = async () => {
+    try {
+      const result = await authApi.checkEmailVerification()
+      return result.verified
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const verifyEmail = async (id: string, hash: string, signature: string) => {
+    try {
+      await authApi.verifyEmail(id, hash, signature)
+      // ユーザー情報を更新
+      await refreshUser()
+    } catch (error) {
+      throw error
+    }
+  }
+
   const value = {
     user,
     login,
@@ -167,11 +304,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     verifyEmailAndCompleteRegistration,
     logout,
     twoFactorChallenge,
+    emailTwoFactorChallenge,
     enableTwoFactor,
     disableTwoFactor,
+    enableEmailTwoFactor,
+    disableEmailTwoFactor,
+    updateProfile,
+    changePassword,
+    refreshUser,
     loading,
     isAuthenticated: !!user,
     requiresTwoFactor,
+    resendVerificationEmail,
+    checkEmailVerification,
+    verifyEmail,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

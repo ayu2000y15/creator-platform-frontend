@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, CheckCircle, XCircle } from "lucide-react"
+import { ArrowLeft, CheckCircle, XCircle, Shield, Mail, Smartphone } from "lucide-react"
 import { authApi } from "@/lib/auth-api"
 import api from "@/lib/api"
 
@@ -72,17 +72,179 @@ export default function TestPage() {
     }
   }
 
+  const runEmailVerificationTest = async () => {
+    try {
+      // メール認証状態確認テスト
+      try {
+        const result = await authApi.checkEmailVerification()
+        addResult("メール認証状態確認", "success", `認証状態: ${result.verified ? "認証済み" : "未認証"}`)
+      } catch (error: any) {
+        addResult("メール認証状態確認", "error", `状態確認失敗: ${error.response?.data?.message || error.message}`)
+      }
+
+      // メール再送信テスト
+      try {
+        await authApi.resendVerificationEmail()
+        addResult("認証メール再送信", "success", "認証メールの再送信に成功しました")
+      } catch (error: any) {
+        addResult("認証メール再送信", "error", `再送信失敗: ${error.response?.data?.message || error.message}`)
+      }
+    } catch (error: any) {
+      addResult("メール認証テスト", "error", `テスト失敗: ${error.message}`)
+    }
+  }
+
+  const runAppTwoFactorTest = async () => {
+    try {
+      // 認証アプリによる二段階認証有効化テスト
+      try {
+        const response = await authApi.enableTwoFactor()
+        addResult("認証アプリ二段階認証有効化", "success", "認証アプリによる二段階認証の有効化に成功しました")
+
+        // QRコード取得テスト
+        try {
+          const qrResponse = await authApi.getTwoFactorQrCode()
+          addResult("QRコード取得", "success", "QRコードの取得に成功しました")
+        } catch (error: any) {
+          addResult("QRコード取得", "error", `QRコード取得失敗: ${error.response?.data?.message || error.message}`)
+        }
+
+        // シークレットキー取得テスト
+        try {
+          const secretResponse = await authApi.getTwoFactorSecret()
+          addResult("シークレットキー取得", "success", `シークレットキー: ${secretResponse.secret.substring(0, 8)}...`)
+        } catch (error: any) {
+          addResult(
+            "シークレットキー取得",
+            "error",
+            `シークレットキー取得失敗: ${error.response?.data?.message || error.message}`,
+          )
+        }
+
+        // バックアップコード取得テスト
+        try {
+          const codesResponse = await authApi.getTwoFactorRecoveryCodes()
+          addResult(
+            "バックアップコード取得",
+            "success",
+            `${codesResponse.recovery_codes.length}個のバックアップコードを取得しました`,
+          )
+        } catch (error: any) {
+          addResult(
+            "バックアップコード取得",
+            "error",
+            `バックアップコード取得失敗: ${error.response?.data?.message || error.message}`,
+          )
+        }
+      } catch (error: any) {
+        addResult(
+          "認証アプリ二段階認証有効化",
+          "error",
+          `有効化失敗: ${error.response?.data?.message || error.message}`,
+        )
+      }
+
+      // 二段階認証無効化テスト
+      try {
+        await authApi.disableTwoFactor()
+        addResult("認証アプリ二段階認証無効化", "success", "認証アプリによる二段階認証の無効化に成功しました")
+      } catch (error: any) {
+        addResult(
+          "認証アプリ二段階認証無効化",
+          "error",
+          `無効化失敗: ${error.response?.data?.message || error.message}`,
+        )
+      }
+    } catch (error: any) {
+      addResult("認証アプリ二段階認証テスト", "error", `テスト失敗: ${error.message}`)
+    }
+  }
+
+  const runEmailTwoFactorTest = async () => {
+    try {
+      // メール認証による二段階認証有効化テスト
+      try {
+        await authApi.enableEmailTwoFactor()
+        addResult("メール二段階認証有効化", "success", "メール認証による二段階認証の有効化に成功しました")
+      } catch (error: any) {
+        addResult("メール二段階認証有効化", "error", `有効化失敗: ${error.response?.data?.message || error.message}`)
+      }
+
+      // メール認証コード送信テスト
+      try {
+        await authApi.sendEmailTwoFactorCode(testEmail)
+        addResult("メール認証コード送信", "success", "メール認証コードの送信に成功しました")
+      } catch (error: any) {
+        addResult("メール認証コード送信", "error", `送信失敗: ${error.response?.data?.message || error.message}`)
+      }
+
+      // メール認証による二段階認証無効化テスト
+      try {
+        await authApi.disableEmailTwoFactor()
+        addResult("メール二段階認証無効化", "success", "メール認証による二段階認証の無効化に成功しました")
+      } catch (error: any) {
+        addResult("メール二段階認証無効化", "error", `無効化失敗: ${error.response?.data?.message || error.message}`)
+      }
+    } catch (error: any) {
+      addResult("メール二段階認証テスト", "error", `テスト失敗: ${error.message}`)
+    }
+  }
+
+  const runTwoFactorTest = async () => {
+    await runAppTwoFactorTest()
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    await runEmailTwoFactorTest()
+  }
+
+  const runProfileUpdateTest = async () => {
+    try {
+      // プロフィール更新テスト
+      try {
+        const updatedUser = await authApi.updateProfile({
+          name: "テストユーザー更新",
+          email: testEmail,
+        })
+        addResult("プロフィール更新", "success", `プロフィール更新成功: ${updatedUser.name}`)
+      } catch (error: any) {
+        addResult("プロフィール更新", "error", `更新失敗: ${error.response?.data?.message || error.message}`)
+      }
+
+      // パスワード変更テスト（無効なパスワードでテスト）
+      try {
+        await authApi.changePassword({
+          current_password: "wrongpassword",
+          password: "newpassword123",
+          password_confirmation: "newpassword123",
+        })
+        addResult("パスワード変更エラーテスト", "error", "無効なパスワードで変更が成功しました（予期しない動作）")
+      } catch (error: any) {
+        addResult("パスワード変更エラーテスト", "success", "無効なパスワードが正しく拒否されました")
+      }
+    } catch (error: any) {
+      addResult("プロフィール更新テスト", "error", `テスト失敗: ${error.message}`)
+    }
+  }
+
   const runAllTests = async () => {
     setIsRunning(true)
     setTestResults([])
 
     await runBasicConnectionTest()
-    await new Promise((resolve) => setTimeout(resolve, 1000)) // 1秒待機
+    await new Promise((resolve) => setTimeout(resolve, 1000))
 
     await runRegistrationFlowTest()
-    await new Promise((resolve) => setTimeout(resolve, 1000)) // 1秒待機
+    await new Promise((resolve) => setTimeout(resolve, 1000))
 
     await runLoginFlowTest()
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    await runEmailVerificationTest()
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    await runTwoFactorTest()
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    await runProfileUpdateTest()
 
     setIsRunning(false)
   }
@@ -118,12 +280,33 @@ export default function TestPage() {
               />
             </div>
 
-            <div className="flex gap-2">
-              <Button onClick={runAllTests} disabled={isRunning}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <Button onClick={runAllTests} disabled={isRunning} className="col-span-2 md:col-span-1">
                 {isRunning ? "テスト実行中..." : "全テスト実行"}
               </Button>
               <Button variant="outline" onClick={runBasicConnectionTest} disabled={isRunning}>
-                基本接続テスト
+                基本接続
+              </Button>
+              <Button variant="outline" onClick={runRegistrationFlowTest} disabled={isRunning}>
+                登録フロー
+              </Button>
+              <Button variant="outline" onClick={runLoginFlowTest} disabled={isRunning}>
+                ログイン
+              </Button>
+              <Button variant="outline" onClick={runEmailVerificationTest} disabled={isRunning}>
+                <Mail className="h-4 w-4 mr-1" />
+                メール認証
+              </Button>
+              <Button variant="outline" onClick={runAppTwoFactorTest} disabled={isRunning}>
+                <Smartphone className="h-4 w-4 mr-1" />
+                認証アプリ
+              </Button>
+              <Button variant="outline" onClick={runEmailTwoFactorTest} disabled={isRunning}>
+                <Shield className="h-4 w-4 mr-1" />
+                メール2FA
+              </Button>
+              <Button variant="outline" onClick={runProfileUpdateTest} disabled={isRunning}>
+                プロフィール
               </Button>
               <Button variant="outline" onClick={clearResults}>
                 結果クリア
@@ -161,36 +344,34 @@ export default function TestPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">テスト手順</CardTitle>
+            <CardTitle className="text-lg">Laravel側で実装が必要なAPIエンドポイント</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4 text-sm">
               <div>
-                <h4 className="font-medium mb-2">1. Laravel側の準備</h4>
+                <h4 className="font-medium mb-2">メール認証による二段階認証</h4>
                 <ul className="list-disc list-inside space-y-1 text-slate-600">
-                  <li>Laravel Sanctumがインストール済みであること</li>
-                  <li>UserモデルでHasApiTokensトレイトが使用されていること</li>
-                  <li>CORS設定が正しく行われていること</li>
-                  <li>メール送信設定が完了していること</li>
+                  <li>POST /api/user/email-two-factor-authentication - メール二段階認証有効化</li>
+                  <li>DELETE /api/user/email-two-factor-authentication - メール二段階認証無効化</li>
+                  <li>POST /api/email-two-factor-code - ログイン時メール認証コード送信</li>
+                  <li>POST /api/email-two-factor-challenge - メール認証コード検証</li>
                 </ul>
               </div>
 
               <div>
-                <h4 className="font-medium mb-2">2. 新しいAPIエンドポイントの追加</h4>
+                <h4 className="font-medium mb-2">ログイン時の認証方法分岐</h4>
                 <ul className="list-disc list-inside space-y-1 text-slate-600">
-                  <li>POST /api/register/email - メール仮登録</li>
-                  <li>POST /api/register/verify - 登録完了</li>
-                  <li>GET /api/test - 接続テスト用</li>
+                  <li>ログインAPIで二段階認証が必要な場合、two_factor_method（"app" | "email"）を返す</li>
+                  <li>認証アプリの場合：既存の /api/two-factor-challenge を使用</li>
+                  <li>メール認証の場合：/api/email-two-factor-challenge を使用</li>
                 </ul>
               </div>
 
               <div>
-                <h4 className="font-medium mb-2">3. 実際の登録フロー</h4>
+                <h4 className="font-medium mb-2">Userモデルの更新</h4>
                 <ul className="list-disc list-inside space-y-1 text-slate-600">
-                  <li>/register でメールアドレスを入力</li>
-                  <li>メールに送信された6桁のコードを確認</li>
-                  <li>/register/complete でコードと詳細情報を入力</li>
-                  <li>登録完了後、/dashboard にリダイレクト</li>
+                  <li>email_two_factor_enabled カラムを追加（boolean）</li>
+                  <li>二段階認証の無効化時は両方の認証方法をクリア</li>
                 </ul>
               </div>
             </div>

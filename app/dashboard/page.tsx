@@ -8,6 +8,7 @@ import { Settings, LogOut, Plus, TrendingUp } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
+import { EmailVerificationBanner } from "@/components/email-verification-banner"
 
 export default function DashboardPage() {
   const { user, logout, loading } = useAuth()
@@ -26,6 +27,10 @@ export default function DashboardPage() {
     } catch (error) {
       console.error("ログアウトエラー:", error)
     }
+  }
+
+  const handleProfileClick = () => {
+    router.push("/profile")
   }
 
   if (loading || !user) {
@@ -49,9 +54,15 @@ export default function DashboardPage() {
           <div className="flex justify-between items-center h-16">
             <h1 className="text-xl font-semibold text-slate-900">Creator Platform</h1>
             <div className="flex items-center gap-4">
-              <Avatar>
-                <AvatarFallback>{userInitials}</AvatarFallback>
-              </Avatar>
+              <button
+                onClick={handleProfileClick}
+                className="flex items-center gap-2 hover:bg-slate-100 rounded-lg p-2 transition-colors"
+              >
+                <Avatar>
+                  <AvatarFallback>{userInitials}</AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium text-slate-700">{user.name}</span>
+              </button>
               <Button variant="ghost" size="sm">
                 <Settings className="h-4 w-4" />
               </Button>
@@ -65,6 +76,8 @@ export default function DashboardPage() {
 
       {/* メインコンテンツ */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <EmailVerificationBanner />
+
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-slate-900 mb-2">おかえりなさい、{user.name}さん</h2>
           <p className="text-slate-600">今日も素晴らしい作品を作りましょう</p>
