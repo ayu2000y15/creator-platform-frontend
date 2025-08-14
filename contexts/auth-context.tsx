@@ -1,94 +1,110 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
 import {
   authApi,
   type User,
   type TwoFactorChallengeData,
   type UpdateProfileData,
   type ChangePasswordData,
-} from "@/lib/auth-api"
+} from "@/lib/auth-api";
 
 interface AuthContextType {
-  user: User | null
+  user: User | null;
   login: (
     email: string,
+    password: string
+  ) => Promise<{
+    requiresTwoFactor?: boolean;
+    twoFactorMethod?: "app" | "email";
+  }>;
+  register: (name: string, email: string, password: string) => Promise<void>;
+  registerWithEmail: (email: string) => Promise<void>;
+  verifyEmailAndCompleteRegistration: (
+    email: string,
+    code: string,
+    name: string,
     password: string,
-  ) => Promise<{ requiresTwoFactor?: boolean; twoFactorMethod?: "app" | "email" }>
-  register: (name: string, email: string, password: string) => Promise<void>
-  registerWithEmail: (email: string) => Promise<void>
-  verifyEmailAndCompleteRegistration: (email: string, code: string, name: string, password: string) => Promise<void>
-  logout: () => Promise<void>
-  twoFactorChallenge: (data: TwoFactorChallengeData) => Promise<void>
-  emailTwoFactorChallenge: (email: string, code: string) => Promise<void>
-  enableTwoFactor: () => Promise<any>
-  disableTwoFactor: () => Promise<void>
-  enableEmailTwoFactor: () => Promise<void>
-  disableEmailTwoFactor: () => Promise<void>
-  updateProfile: (data: UpdateProfileData) => Promise<void>
-  changePassword: (data: ChangePasswordData) => Promise<void>
-  refreshUser: () => Promise<void>
-  loading: boolean
-  isAuthenticated: boolean
-  requiresTwoFactor: boolean
-  resendVerificationEmail: () => Promise<void>
-  checkEmailVerification: () => Promise<boolean>
-  verifyEmail: (id: string, hash: string, signature: string) => Promise<void>
+    birthday?: string,
+    phone_number?: string
+  ) => Promise<void>;
+  logout: () => Promise<void>;
+  twoFactorChallenge: (data: TwoFactorChallengeData) => Promise<void>;
+  emailTwoFactorChallenge: (email: string, code: string) => Promise<void>;
+  enableTwoFactor: () => Promise<any>;
+  disableTwoFactor: () => Promise<void>;
+  enableEmailTwoFactor: () => Promise<void>;
+  disableEmailTwoFactor: () => Promise<void>;
+  updateProfile: (data: UpdateProfileData) => Promise<void>;
+  changePassword: (data: ChangePasswordData) => Promise<void>;
+  refreshUser: () => Promise<void>;
+  loading: boolean;
+  isAuthenticated: boolean;
+  requiresTwoFactor: boolean;
+  resendVerificationEmail: () => Promise<void>;
+  checkEmailVerification: () => Promise<boolean>;
+  verifyEmail: (id: string, hash: string, signature: string) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false)
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem("auth_token")
+      const token = localStorage.getItem("auth_token");
       if (token) {
         try {
-          const userData = await authApi.getUser()
-          setUser(userData)
+          const userData = await authApi.getUser();
+          setUser(userData);
         } catch (error: any) {
-          console.log("Token validation failed, clearing auth state")
-          localStorage.removeItem("auth_token")
-          setUser(null)
+          console.log("Token validation failed, clearing auth state");
+          localStorage.removeItem("auth_token");
+          setUser(null);
           // エラーを再スローしない（静かに失敗させる）
         }
       }
-      setLoading(false)
-    }
+      setLoading(false);
+    };
 
-    initAuth()
-  }, [])
+    initAuth();
+  }, []);
 
   const login = async (email: string, password: string) => {
     try {
-      console.log("Login attempt:", { email, password: "***" })
+      console.log("Login attempt:", { email, password: "***" });
 
-      const response = await authApi.login({ email, password })
+      const response = await authApi.login({ email, password });
 
       if (response.two_factor) {
-        setRequiresTwoFactor(true)
-        const twoFactorMethod = response.two_factor_method || "app"
-        return { requiresTwoFactor: true, twoFactorMethod }
+        setRequiresTwoFactor(true);
+        const twoFactorMethod = response.two_factor_method || "app";
+        return { requiresTwoFactor: true, twoFactorMethod };
       }
 
-      localStorage.setItem("auth_token", response.token)
-      setUser(response.user)
-      setRequiresTwoFactor(false)
-      return {}
+      localStorage.setItem("auth_token", response.token);
+      setUser(response.user);
+      setRequiresTwoFactor(false);
+      return {};
     } catch (error: any) {
       console.error("Login error details:", {
         status: error.response?.status,
         message: error.response?.data?.message,
         errors: error.response?.data?.errors,
         data: error.response?.data,
-      })
-      throw error
+      });
+      throw error;
     }
-  }
+  };
 
   const register = async (name: string, email: string, password: string) => {
     try {
@@ -97,24 +113,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         password,
         password_confirmation: password,
-      })
+      });
 
-      localStorage.setItem("auth_token", response.token)
-      setUser(response.user)
+      localStorage.setItem("auth_token", response.token);
+      setUser(response.user);
     } catch (error) {
-      throw error
+      throw error;
     }
-  }
+  };
 
   const registerWithEmail = async (email: string) => {
     try {
-      await authApi.registerWithEmail({ email })
+      await authApi.registerWithEmail({ email });
     } catch (error) {
-      throw error
+      throw error;
     }
-  }
+  };
 
-  const verifyEmailAndCompleteRegistration = async (email: string, code: string, name: string, password: string) => {
+  const verifyEmailAndCompleteRegistration = async (
+    email: string,
+    code: string,
+    name: string,
+    password: string,
+    birthday?: string,
+    phone_number?: string
+  ) => {
     try {
       const response = await authApi.verifyEmailAndCompleteRegistration({
         email,
@@ -122,65 +145,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name,
         password,
         password_confirmation: password,
-      })
+        birthday,
+        phone_number,
+      });
 
-      localStorage.setItem("auth_token", response.token)
-      setUser(response.user)
+      localStorage.setItem("auth_token", response.token);
+      setUser(response.user);
     } catch (error) {
-      throw error
+      throw error;
     }
-  }
+  };
 
   const twoFactorChallenge = async (data: TwoFactorChallengeData) => {
     try {
-      const response = await authApi.twoFactorChallenge(data)
-      localStorage.setItem("auth_token", response.token)
-      setUser(response.user)
-      setRequiresTwoFactor(false)
+      const response = await authApi.twoFactorChallenge(data);
+      localStorage.setItem("auth_token", response.token);
+      setUser(response.user);
+      setRequiresTwoFactor(false);
     } catch (error) {
-      throw error
+      throw error;
     }
-  }
+  };
 
   const emailTwoFactorChallenge = async (email: string, code: string) => {
     try {
-      const response = await authApi.verifyEmailTwoFactorCode({ email, code })
-      localStorage.setItem("auth_token", response.token)
-      setUser(response.user)
-      setRequiresTwoFactor(false)
+      const response = await authApi.verifyEmailTwoFactorCode({ email, code });
+      localStorage.setItem("auth_token", response.token);
+      setUser(response.user);
+      setRequiresTwoFactor(false);
     } catch (error) {
-      throw error
+      throw error;
     }
-  }
+  };
 
   const enableTwoFactor = async () => {
     try {
       if (user?.email_two_factor_enabled) {
-        await authApi.disableEmailTwoFactor()
+        await authApi.disableEmailTwoFactor();
       }
 
-      const response = await authApi.enableTwoFactor()
+      const response = await authApi.enableTwoFactor();
       // ユーザー情報を更新
       if (user) {
         setUser({
           ...user,
           two_factor_enabled: true,
           email_two_factor_enabled: false, // メール認証を無効にする
-        })
+        });
       }
-      return response
+      return response;
     } catch (error) {
-      throw error
+      throw error;
     }
-  }
+  };
 
   const disableTwoFactor = async () => {
     try {
       if (user?.two_factor_confirmed_at) {
-        await authApi.disableTwoFactor()
+        await authApi.disableTwoFactor();
       }
       if (user?.email_two_factor_enabled) {
-        await authApi.disableEmailTwoFactor()
+        await authApi.disableEmailTwoFactor();
       }
 
       // ユーザー情報を更新
@@ -190,20 +215,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           two_factor_enabled: false,
           two_factor_confirmed_at: null,
           email_two_factor_enabled: false,
-        })
+        });
       }
     } catch (error) {
-      throw error
+      throw error;
     }
-  }
+  };
 
   const enableEmailTwoFactor = async () => {
     try {
       if (user?.two_factor_confirmed_at) {
-        await authApi.disableTwoFactor()
+        await authApi.disableTwoFactor();
       }
 
-      await authApi.enableEmailTwoFactor()
+      await authApi.enableEmailTwoFactor();
       // ユーザー情報を更新
       if (user) {
         setUser({
@@ -211,90 +236,90 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email_two_factor_enabled: true,
           two_factor_confirmed_at: null, // アプリ認証を無効にする
           two_factor_enabled: false,
-        })
+        });
       }
     } catch (error) {
-      throw error
+      throw error;
     }
-  }
+  };
 
   const disableEmailTwoFactor = async () => {
     try {
-      await authApi.disableEmailTwoFactor()
+      await authApi.disableEmailTwoFactor();
       // ユーザー情報を更新
       if (user) {
-        setUser({ ...user, email_two_factor_enabled: false })
+        setUser({ ...user, email_two_factor_enabled: false });
       }
     } catch (error) {
-      throw error
+      throw error;
     }
-  }
+  };
 
   const updateProfile = async (data: UpdateProfileData) => {
     try {
-      const updatedUser = await authApi.updateProfile(data)
-      setUser(updatedUser)
+      const updatedUser = await authApi.updateProfile(data);
+      setUser(updatedUser);
     } catch (error) {
-      throw error
+      throw error;
     }
-  }
+  };
 
   const changePassword = async (data: ChangePasswordData) => {
     try {
-      await authApi.changePassword(data)
+      await authApi.changePassword(data);
     } catch (error) {
-      throw error
+      throw error;
     }
-  }
+  };
 
   const refreshUser = async () => {
     try {
-      const userData = await authApi.getUser()
-      setUser(userData)
+      const userData = await authApi.getUser();
+      setUser(userData);
     } catch (error) {
-      throw error
+      throw error;
     }
-  }
+  };
 
   const logout = async () => {
     try {
-      await authApi.logout()
+      await authApi.logout();
     } catch (error) {
       // ログアウトAPIが失敗してもローカルの状態はクリア
-      console.error("Logout API failed:", error)
+      console.error("Logout API failed:", error);
     } finally {
-      localStorage.removeItem("auth_token")
-      setUser(null)
-      setRequiresTwoFactor(false)
+      localStorage.removeItem("auth_token");
+      setUser(null);
+      setRequiresTwoFactor(false);
     }
-  }
+  };
 
   const resendVerificationEmail = async () => {
     try {
-      await authApi.resendVerificationEmail()
+      await authApi.resendVerificationEmail();
     } catch (error) {
-      throw error
+      throw error;
     }
-  }
+  };
 
   const checkEmailVerification = async () => {
     try {
-      const result = await authApi.checkEmailVerification()
-      return result.verified
+      const result = await authApi.checkEmailVerification();
+      return result.verified;
     } catch (error) {
-      throw error
+      throw error;
     }
-  }
+  };
 
   const verifyEmail = async (id: string, hash: string, signature: string) => {
     try {
-      await authApi.verifyEmail(id, hash, signature)
+      await authApi.verifyEmail(id, hash, signature);
       // ユーザー情報を更新
-      await refreshUser()
+      await refreshUser();
     } catch (error) {
-      throw error
+      throw error;
     }
-  }
+  };
 
   const value = {
     user,
@@ -318,15 +343,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     resendVerificationEmail,
     checkEmailVerification,
     verifyEmail,
-  }
+  };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export const useAuth = () => {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context
-}
+  return context;
+};

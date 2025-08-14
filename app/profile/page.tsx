@@ -146,6 +146,24 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-600">
+                    誕生日
+                  </label>
+                  <p className="text-slate-900 mt-1">
+                    {user.birthday
+                      ? new Date(user.birthday).toLocaleDateString("ja-JP")
+                      : "未設定"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600">
+                    電話番号
+                  </label>
+                  <p className="text-slate-900 mt-1">
+                    {user.phone_number || "未設定"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600">
                     ユーザーID
                   </label>
                   <p className="text-slate-900 mt-1">#{user.id}</p>
