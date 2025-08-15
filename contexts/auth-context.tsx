@@ -43,6 +43,8 @@ interface AuthContextType {
   disableEmailTwoFactor: () => Promise<void>;
   updateProfile: (data: UpdateProfileData) => Promise<void>;
   changePassword: (data: ChangePasswordData) => Promise<void>;
+  uploadProfileImage: (file: File) => Promise<string>;
+  deleteProfileImage: () => Promise<void>;
   refreshUser: () => Promise<void>;
   loading: boolean;
   isAuthenticated: boolean;
@@ -70,7 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log("Token validation failed, clearing auth state");
           localStorage.removeItem("auth_token");
           setUser(null);
-          // エラーを再スローしない（静かに失敗させる）
         }
       }
       setLoading(false);
@@ -185,12 +186,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const response = await authApi.enableTwoFactor();
-      // ユーザー情報を更新
       if (user) {
         setUser({
           ...user,
           two_factor_enabled: true,
-          email_two_factor_enabled: false, // メール認証を無効にする
+          email_two_factor_enabled: false,
         });
       }
       return response;
@@ -208,7 +208,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await authApi.disableEmailTwoFactor();
       }
 
-      // ユーザー情報を更新
       if (user) {
         setUser({
           ...user,
@@ -229,12 +228,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       await authApi.enableEmailTwoFactor();
-      // ユーザー情報を更新
       if (user) {
         setUser({
           ...user,
           email_two_factor_enabled: true,
-          two_factor_confirmed_at: null, // アプリ認証を無効にする
+          two_factor_confirmed_at: null,
           two_factor_enabled: false,
         });
       }
@@ -246,7 +244,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const disableEmailTwoFactor = async () => {
     try {
       await authApi.disableEmailTwoFactor();
-      // ユーザー情報を更新
       if (user) {
         setUser({ ...user, email_two_factor_enabled: false });
       }
@@ -272,6 +269,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const uploadProfileImage = async (file: File) => {
+    try {
+      const imageUrl = await authApi.uploadProfileImage(file);
+      if (user) {
+        setUser({ ...user, profile_image: imageUrl });
+      }
+      return imageUrl;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const deleteProfileImage = async () => {
+    try {
+      await authApi.deleteProfileImage();
+      if (user) {
+        setUser({ ...user, profile_image: null });
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const refreshUser = async () => {
     try {
       const userData = await authApi.getUser();
@@ -285,7 +305,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authApi.logout();
     } catch (error) {
-      // ログアウトAPIが失敗してもローカルの状態はクリア
       console.error("Logout API failed:", error);
     } finally {
       localStorage.removeItem("auth_token");
@@ -314,7 +333,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verifyEmail = async (id: string, hash: string, signature: string) => {
     try {
       await authApi.verifyEmail(id, hash, signature);
-      // ユーザー情報を更新
       await refreshUser();
     } catch (error) {
       throw error;
@@ -336,6 +354,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     disableEmailTwoFactor,
     updateProfile,
     changePassword,
+    uploadProfileImage,
+    deleteProfileImage,
     refreshUser,
     loading,
     isAuthenticated: !!user,

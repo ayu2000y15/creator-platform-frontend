@@ -13,8 +13,26 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Save, User, Lock, Shield, AlertCircle } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  ArrowLeft,
+  Save,
+  User,
+  Lock,
+  Shield,
+  AlertCircle,
+  Upload,
+  Trash2,
+} from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 
@@ -22,19 +40,39 @@ export default function EditProfilePage() {
   const {
     user,
     loading,
-    enableTwoFactor,
-    disableTwoFactor,
     updateProfile,
     changePassword,
+    uploadProfileImage,
+    deleteProfileImage,
   } = useAuth();
   const router = useRouter();
 
-  // プロフィール情報の状態
-  const [profileData, setProfileData] = useState({
-    name: "",
-    email: "",
-    birthday: "",
-    phone_number: "",
+  // プロフィール情報の状態 - userデータがある場合は初期値として設定
+  const [profileData, setProfileData] = useState(() => {
+    if (user) {
+      return {
+        name: user.name || "",
+        email: user.email || "",
+        username: user.username || "",
+        bio: user.bio || "",
+        profile_image: user.profile_image || "",
+        birthday: user.birthday ? user.birthday.split("T")[0] : "",
+        birthday_visibility:
+          (user.birthday_visibility as "full" | "month_day" | "hidden") ||
+          "hidden",
+        phone_number: user.phone_number || "",
+      };
+    }
+    return {
+      name: "",
+      email: "",
+      username: "",
+      bio: "",
+      profile_image: "",
+      birthday: "",
+      birthday_visibility: "hidden" as "full" | "month_day" | "hidden",
+      phone_number: "",
+    };
   });
 
   // パスワード変更の状態
@@ -47,24 +85,42 @@ export default function EditProfilePage() {
   // UI状態
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [isToggling2FA, setIsToggling2FA] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [imageError, setImageError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
+  const [imageSuccess, setImageSuccess] = useState("");
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
-    } else if (user) {
-      setProfileData({
-        name: user.name,
-        email: user.email,
-        birthday: user.birthday ? user.birthday.split("T")[0] : "",
-        phone_number: user.phone_number || "",
-      });
+      return;
     }
-  }, [user, loading, router]);
+
+    // 初回ロード時のみデータを設定
+    if (user && user.name && user.email && !isInitialized) {
+      const newProfileData = {
+        name: user.name || "",
+        email: user.email || "",
+        username: user.username || "",
+        bio: user.bio || "",
+        profile_image: user.profile_image || "",
+        birthday: user.birthday
+          ? new Date(user.birthday).toLocaleDateString("en-CA")
+          : "",
+        birthday_visibility:
+          (user.birthday_visibility as "full" | "month_day" | "hidden") ||
+          "hidden",
+        phone_number: user.phone_number || "",
+      };
+
+      setProfileData(newProfileData);
+      setIsInitialized(true);
+    }
+  }, [user, loading, router, isInitialized]);
 
   const handleBackToProfile = () => {
     router.push("/profile");
@@ -76,13 +132,31 @@ export default function EditProfilePage() {
     setProfileError("");
     setProfileSuccess("");
 
+    // 現在の値をuserデータでフォールバック
+    const dataToSubmit = {
+      name: profileData.name || user?.name || "",
+      email: profileData.email || user?.email || "",
+      username: profileData.username || user?.username || "",
+      bio: profileData.bio || user?.bio || "",
+      profile_image: profileData.profile_image || user?.profile_image || "",
+      birthday:
+        profileData.birthday ||
+        (user?.birthday
+          ? new Date(user.birthday).toLocaleDateString("en-CA")
+          : ""),
+      birthday_visibility:
+        profileData.birthday_visibility ||
+        user?.birthday_visibility ||
+        "hidden",
+      phone_number: profileData.phone_number || user?.phone_number || "",
+    };
+
     try {
-      await updateProfile(profileData);
+      await updateProfile(dataToSubmit);
       setProfileSuccess("プロフィールを更新しました");
-    } catch (error: any) {
-      setProfileError(
-        error.response?.data?.message || "プロフィールの更新に失敗しました"
-      );
+    } catch (error) {
+      console.error("Profile update error:", error);
+      setProfileError("プロフィールの更新に失敗しました");
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -108,12 +182,63 @@ export default function EditProfilePage() {
         password: "",
         password_confirmation: "",
       });
-    } catch (error: any) {
-      setPasswordError(
-        error.response?.data?.message || "パスワードの変更に失敗しました"
-      );
+    } catch {
+      setPasswordError("パスワードの変更に失敗しました");
     } finally {
       setIsChangingPassword(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // ファイルサイズチェック (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setImageError("ファイルサイズは5MB以下にしてください");
+      return;
+    }
+
+    // ファイル形式チェック
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+      "image/gif",
+      "image/webp",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      setImageError("JPEG、PNG、GIF、WebP形式の画像のみアップロード可能です");
+      return;
+    }
+
+    setIsUploadingImage(true);
+    setImageError("");
+    setImageSuccess("");
+
+    try {
+      const imageUrl = await uploadProfileImage(file);
+      setProfileData((prev) => ({ ...prev, profile_image: imageUrl }));
+      setImageSuccess("プロフィール画像をアップロードしました");
+      // ファイル入力をリセット
+      e.target.value = "";
+    } catch {
+      setImageError("画像のアップロードに失敗しました");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleImageDelete = async () => {
+    setImageError("");
+    setImageSuccess("");
+
+    try {
+      await deleteProfileImage();
+      setProfileData((prev) => ({ ...prev, profile_image: "" }));
+      setImageSuccess("プロフィール画像を削除しました");
+    } catch {
+      setImageError("画像の削除に失敗しました");
     }
   };
 
@@ -156,26 +281,124 @@ export default function EditProfilePage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
-                基本情報
+                プロフィール情報
               </CardTitle>
               <CardDescription>
-                名前とメールアドレスを変更できます
+                プロフィール画像、基本情報、自己紹介を編集できます
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleProfileSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">名前</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={profileData.name}
-                    onChange={(e) =>
-                      setProfileData({ ...profileData, name: e.target.value })
-                    }
-                    required
-                  />
+              <form onSubmit={handleProfileSubmit} className="space-y-6">
+                {/* プロフィール画像 */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-6">
+                    <Avatar className="h-20 w-20">
+                      {profileData.profile_image ? (
+                        <AvatarImage
+                          src={profileData.profile_image}
+                          alt={profileData.name || "プロフィール"}
+                        />
+                      ) : (
+                        <AvatarFallback className="text-xl bg-slate-200 text-slate-700">
+                          {profileData.name.slice(0, 2).toUpperCase() || "??"}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <div className="space-y-3">
+                      <div>
+                        <Label>プロフィール画像</Label>
+                        <p className="text-sm text-slate-500">
+                          JPEG、PNG、GIF、WebP形式、5MB以下
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                          id="profile-image-upload"
+                          disabled={isUploadingImage}
+                        />
+                        <label htmlFor="profile-image-upload">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={isUploadingImage}
+                            asChild
+                          >
+                            <span>
+                              <Upload className="h-4 w-4 mr-2" />
+                              {isUploadingImage
+                                ? "アップロード中..."
+                                : "画像を選択"}
+                            </span>
+                          </Button>
+                        </label>
+                        {profileData.profile_image && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleImageDelete}
+                            className="text-red-600 hover:text-red-700 bg-transparent"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            削除
+                          </Button>
+                        )}
+                      </div>
+                      {imageError && (
+                        <div className="flex items-center gap-2 text-red-600 text-sm">
+                          <AlertCircle className="h-4 w-4" />
+                          {imageError}
+                        </div>
+                      )}
+                      {imageSuccess && (
+                        <div className="text-green-600 text-sm">
+                          {imageSuccess}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
+
+                {/* 基本情報 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">名前</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      value={profileData.name}
+                      onChange={(e) =>
+                        setProfileData({ ...profileData, name: e.target.value })
+                      }
+                      placeholder="名前を入力"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="username">ユーザー名</Label>
+                    <Input
+                      id="username"
+                      type="text"
+                      value={profileData.username}
+                      onChange={(e) =>
+                        setProfileData({
+                          ...profileData,
+                          username: e.target.value,
+                        })
+                      }
+                      placeholder="username"
+                    />
+                    <p className="text-xs text-slate-500">
+                      英数字とアンダースコアのみ使用可能
+                    </p>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="email">メールアドレス</Label>
                   <Input
@@ -185,27 +408,72 @@ export default function EditProfilePage() {
                     onChange={(e) =>
                       setProfileData({ ...profileData, email: e.target.value })
                     }
+                    placeholder="メールアドレスを入力"
                     required
                   />
                 </div>
 
+                {/* 自己紹介 */}
                 <div className="space-y-2">
-                  <Label htmlFor="birthday">誕生日</Label>
-                  <Input
-                    id="birthday"
-                    type="date"
-                    value={profileData.birthday}
+                  <Label htmlFor="bio">自己紹介</Label>
+                  <Textarea
+                    id="bio"
+                    value={profileData.bio}
                     onChange={(e) =>
-                      setProfileData({
-                        ...profileData,
-                        birthday: e.target.value,
-                      })
+                      setProfileData({ ...profileData, bio: e.target.value })
                     }
-                    max={new Date().toISOString().split("T")[0]}
+                    placeholder="自己紹介を入力してください..."
+                    maxLength={300}
+                    rows={4}
                   />
                   <p className="text-xs text-slate-500">
-                    誕生日を設定すると、お誕生日に特別なサービスを受けられます
+                    {profileData.bio.length}/300文字
                   </p>
+                </div>
+
+                {/* 誕生日設定 */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="birthday">誕生日</Label>
+                    <Input
+                      id="birthday"
+                      type="date"
+                      value={profileData.birthday}
+                      onChange={(e) =>
+                        setProfileData({
+                          ...profileData,
+                          birthday: e.target.value,
+                        })
+                      }
+                      max={new Date().toISOString().split("T")[0]}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="birthday_visibility">
+                      誕生日の表示設定
+                    </Label>
+                    <Select
+                      value={profileData.birthday_visibility}
+                      onValueChange={(value: "full" | "month_day" | "hidden") =>
+                        setProfileData({
+                          ...profileData,
+                          birthday_visibility: value,
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="hidden">非公開</SelectItem>
+                        <SelectItem value="month_day">月日のみ表示</SelectItem>
+                        <SelectItem value="full">年月日を表示</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-slate-500">
+                      プロフィールでの誕生日の表示方法を選択できます
+                    </p>
+                  </div>
                 </div>
 
                 <div className="space-y-2">

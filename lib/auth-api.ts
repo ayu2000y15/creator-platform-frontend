@@ -5,11 +5,15 @@ export interface User {
   name: string;
   email: string;
   email_verified_at: string | null;
+  username?: string | null;
+  bio?: string | null;
+  profile_image?: string | null;
   birthday?: string | null;
+  birthday_visibility?: "full" | "month_day" | "hidden";
   phone_number?: string | null;
   two_factor_enabled?: boolean;
   two_factor_confirmed_at?: string | null;
-  email_two_factor_enabled?: boolean; // メール認証の状態を追加
+  email_two_factor_enabled?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -54,7 +58,11 @@ export interface TwoFactorChallengeData {
 export interface UpdateProfileData {
   name: string;
   email: string;
+  username?: string;
+  bio?: string;
+  profile_image?: string;
   birthday?: string;
+  birthday_visibility?: "full" | "month_day" | "hidden";
   phone_number?: string;
 }
 
@@ -215,5 +223,22 @@ export const authApi = {
   ): Promise<LoginResponse> => {
     const response = await api.post("/email-two-factor-verify", data);
     return response.data;
+  },
+
+  uploadProfileImage: async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const response = await api.post("/user/profile-image", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response.data.image_url;
+  },
+
+  deleteProfileImage: async (): Promise<void> => {
+    await api.delete("/user/profile-image");
   },
 };

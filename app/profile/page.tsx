@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft,
@@ -57,6 +57,18 @@ export default function ProfilePage() {
 
   const userInitials = user.name.slice(0, 2);
 
+  // 生年月日の表示フォーマット関数
+  const formatBirthday = (birthday: string, visibility: string) => {
+    if (!birthday || visibility === "hidden") return "非公開";
+
+    const date = new Date(birthday);
+    if (visibility === "month_day") {
+      return `${date.getMonth() + 1}月${date.getDate()}日`;
+    }
+    // visibility === 'full'
+    return date.toLocaleDateString("ja-JP");
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* ヘッダー */}
@@ -86,18 +98,32 @@ export default function ProfilePage() {
           {/* プロフィール基本情報 */}
           <Card>
             <CardHeader>
-              <div className="flex items-center gap-6">
-                <Avatar className="h-20 w-20">
+              <div className="flex items-start gap-6">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage
+                    src={user.profile_image || undefined}
+                    alt={user.name}
+                  />
                   <AvatarFallback className="text-2xl">
                     {userInitials}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <CardTitle className="text-2xl mb-2">{user.name}</CardTitle>
-                  <CardDescription className="text-base">
+                  <CardTitle className="text-2xl mb-1">{user.name}</CardTitle>
+                  {user.username && (
+                    <p className="text-slate-500 text-sm mb-2">
+                      @{user.username}
+                    </p>
+                  )}
+                  <CardDescription className="text-base mb-3">
                     {user.email}
                   </CardDescription>
-                  <div className="flex items-center gap-2 mt-3">
+                  {user.bio && (
+                    <p className="text-slate-700 mb-3 whitespace-pre-wrap">
+                      {user.bio}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2">
                     {user.two_factor_confirmed_at ||
                     user.email_two_factor_enabled ? (
                       <Badge
@@ -149,9 +175,10 @@ export default function ProfilePage() {
                     誕生日
                   </label>
                   <p className="text-slate-900 mt-1">
-                    {user.birthday
-                      ? new Date(user.birthday).toLocaleDateString("ja-JP")
-                      : "未設定"}
+                    {formatBirthday(
+                      user.birthday || "",
+                      user.birthday_visibility || "hidden"
+                    )}
                   </p>
                 </div>
                 <div>
