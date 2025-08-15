@@ -295,6 +295,7 @@ export default function EditProfilePage() {
                     <Avatar className="h-20 w-20">
                       {profileData.profile_image ? (
                         <AvatarImage
+                          key={profileData.profile_image}
                           src={profileData.profile_image}
                           alt={profileData.name || "プロフィール"}
                         />

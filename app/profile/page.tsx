@@ -100,13 +100,17 @@ export default function ProfilePage() {
             <CardHeader>
               <div className="flex items-start gap-6">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage
-                    src={user.profile_image || undefined}
-                    alt={user.name}
-                  />
-                  <AvatarFallback className="text-2xl">
-                    {userInitials}
-                  </AvatarFallback>
+                  {user.profile_image ? (
+                    <AvatarImage
+                      key={user.profile_image} // 表示を確実に更新するためのkey
+                      src={user.profile_image}
+                      alt={user.name}
+                    />
+                  ) : (
+                    <AvatarFallback className="text-2xl">
+                      {userInitials}
+                    </AvatarFallback>
+                  )}
                 </Avatar>
                 <div className="flex-1">
                   <CardTitle className="text-2xl mb-1">{user.name}</CardTitle>
