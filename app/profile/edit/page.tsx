@@ -117,21 +117,6 @@ export default function EditProfilePage() {
     }
   };
 
-  const handleToggle2FA = async (enabled: boolean) => {
-    setIsToggling2FA(true);
-    try {
-      if (enabled) {
-        await enableTwoFactor();
-      } else {
-        await disableTwoFactor();
-      }
-    } catch (error: any) {
-      console.error("二段階認証の切り替えに失敗:", error);
-    } finally {
-      setIsToggling2FA(false);
-    }
-  };
-
   if (loading || !user) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -342,34 +327,6 @@ export default function EditProfilePage() {
                   {isChangingPassword ? "変更中..." : "パスワードを変更"}
                 </Button>
               </form>
-            </CardContent>
-          </Card>
-
-          {/* セキュリティ設定 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                セキュリティ設定
-              </CardTitle>
-              <CardDescription>
-                アカウントのセキュリティを強化するための設定
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label>二段階認証</Label>
-                  <p className="text-sm text-slate-600">
-                    ログイン時に追加の認証コードを要求してセキュリティを強化します
-                  </p>
-                </div>
-                <Switch
-                  checked={user.two_factor_enabled || false}
-                  onCheckedChange={handleToggle2FA}
-                  disabled={isToggling2FA}
-                />
-              </div>
             </CardContent>
           </Card>
         </div>
