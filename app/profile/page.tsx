@@ -63,7 +63,7 @@ export default function ProfilePage() {
 
     const date = new Date(birthday);
     if (visibility === "month_day") {
-      return `${date.getMonth() + 1}月${date.getDate()}日`;
+      return `${date.getMonth() + 1}/${date.getDate()}`;
     }
     // visibility === 'full'
     return date.toLocaleDateString("ja-JP");
