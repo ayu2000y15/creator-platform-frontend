@@ -13,10 +13,12 @@ import {
   type TwoFactorChallengeData,
   type UpdateProfileData,
   type ChangePasswordData,
+  type UserStats,
 } from "@/lib/auth-api";
 
 interface AuthContextType {
   user: User | null;
+  userStats: UserStats | null;
   login: (
     email: string,
     password: string
@@ -46,6 +48,7 @@ interface AuthContextType {
   uploadProfileImage: (file: File) => Promise<string>;
   deleteProfileImage: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  refreshUserStats: () => Promise<void>;
   loading: boolean;
   isAuthenticated: boolean;
   requiresTwoFactor: boolean;
@@ -58,6 +61,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
 
@@ -69,6 +73,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             const userData = await authApi.getUser();
             setUser(userData);
+            // ユーザーデータ取得成功時に統計データも取得
+            try {
+              const statsData = await authApi.getUserStats();
+              setUserStats(statsData);
+            } catch (statsError) {
+              console.log("Stats loading failed:", statsError);
+              // 統計データの取得に失敗してもユーザー情報は保持
+            }
           } catch (error: any) {
             console.log("Token validation failed:", error?.response?.status);
             // トークンが無効な場合のみクリア
@@ -78,12 +90,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             ) {
               localStorage.removeItem("auth_token");
               setUser(null);
+              setUserStats(null);
             }
           }
         }
       } catch (error) {
         console.error("Auth initialization error:", error);
         setUser(null);
+        setUserStats(null);
       } finally {
         setLoading(false);
       }
@@ -107,6 +121,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("auth_token", response.token);
       setUser(response.user);
       setRequiresTwoFactor(false);
+      // ログイン成功時に統計データも取得
+      try {
+        const statsData = await authApi.getUserStats();
+        setUserStats(statsData);
+      } catch (statsError) {
+        console.log("Stats loading failed:", statsError);
+      }
       return {};
     } catch (error: any) {
       console.error("Login error details:", {
@@ -130,6 +151,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       localStorage.setItem("auth_token", response.token);
       setUser(response.user);
+      // 登録成功時に統計データも取得
+      try {
+        const statsData = await authApi.getUserStats();
+        setUserStats(statsData);
+      } catch (statsError) {
+        console.log("Stats loading failed:", statsError);
+      }
     } catch (error) {
       throw error;
     }
@@ -164,6 +192,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       localStorage.setItem("auth_token", response.token);
       setUser(response.user);
+      // 登録成功時に統計データも取得
+      try {
+        const statsData = await authApi.getUserStats();
+        setUserStats(statsData);
+      } catch (statsError) {
+        console.log("Stats loading failed:", statsError);
+      }
     } catch (error) {
       throw error;
     }
@@ -175,6 +210,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("auth_token", response.token);
       setUser(response.user);
       setRequiresTwoFactor(false);
+      // 二段階認証成功時に統計データも取得
+      try {
+        const statsData = await authApi.getUserStats();
+        setUserStats(statsData);
+      } catch (statsError) {
+        console.log("Stats loading failed:", statsError);
+      }
     } catch (error) {
       throw error;
     }
@@ -186,6 +228,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("auth_token", response.token);
       setUser(response.user);
       setRequiresTwoFactor(false);
+      // メール二段階認証成功時に統計データも取得
+      try {
+        const statsData = await authApi.getUserStats();
+        setUserStats(statsData);
+      } catch (statsError) {
+        console.log("Stats loading failed:", statsError);
+      }
     } catch (error) {
       throw error;
     }
@@ -313,6 +362,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshUserStats = async () => {
+    try {
+      const statsData = await authApi.getUserStats();
+      setUserStats(statsData);
+    } catch (error) {
+      console.error("Failed to refresh user stats:", error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       await authApi.logout();
@@ -321,6 +380,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       localStorage.removeItem("auth_token");
       setUser(null);
+      setUserStats(null);
       setRequiresTwoFactor(false);
     }
   };
@@ -353,6 +413,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = {
     user,
+    userStats,
     login,
     register,
     registerWithEmail,
@@ -369,6 +430,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     uploadProfileImage,
     deleteProfileImage,
     refreshUser,
+    refreshUserStats,
     loading,
     isAuthenticated: !!user,
     requiresTwoFactor,
@@ -386,6 +448,7 @@ export const useAuth = () => {
     // サーバーサイドレンダリング時は初期値を返す
     return {
       user: null,
+      userStats: null,
       loading: true,
       isAuthenticated: false,
       requiresTwoFactor: false,
@@ -405,6 +468,7 @@ export const useAuth = () => {
       uploadProfileImage: async () => "",
       deleteProfileImage: async () => {},
       refreshUser: async () => {},
+      refreshUserStats: async () => {},
       resendVerificationEmail: async () => {},
       checkEmailVerification: async () => false,
       verifyEmail: async () => {},

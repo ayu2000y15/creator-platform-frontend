@@ -86,6 +86,12 @@ export interface EmailTwoFactorData {
   code: string;
 }
 
+export interface UserStats {
+  post_count: number;
+  total_views: number;
+  follower_count: number;
+}
+
 export const authApi = {
   // ユーザー登録
   register: async (data: RegisterData): Promise<LoginResponse> => {
@@ -241,5 +247,21 @@ export const authApi = {
 
   deleteProfileImage: async (): Promise<void> => {
     await api.delete("/user/profile-image");
+  },
+
+  // ユーザー統計データ取得
+  getUserStats: async (): Promise<UserStats> => {
+    try {
+      const response = await api.get("/user/stats");
+      return response.data;
+    } catch (error) {
+      // APIが実装されていない場合はモックデータを返す
+      console.warn("User stats API not available, using mock data");
+      return {
+        post_count: 0,
+        total_views: 0,
+        follower_count: 0,
+      };
+    }
   },
 };

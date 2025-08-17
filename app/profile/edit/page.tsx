@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
+import AppHeader from "@/components/app-header";
 
 export default function EditProfilePage() {
   const {
@@ -255,26 +256,18 @@ export default function EditProfilePage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* ヘッダー */}
-      <header className="bg-white border-b border-slate-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={handleBackToProfile}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                プロフィールに戻る
-              </Button>
-            </div>
-            <h1 className="text-xl font-semibold text-slate-900">
-              プロフィール編集
-            </h1>
-            <div className="w-32"></div>
-          </div>
-        </div>
-      </header>
+      <AppHeader title="プロフィール編集" />
 
       {/* メインコンテンツ */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 戻るボタン */}
+        <div className="mb-6">
+          <Button variant="ghost" size="sm" onClick={handleBackToProfile}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            プロフィールに戻る
+          </Button>
+        </div>
+
         <div className="space-y-6">
           {/* 基本情報編集 */}
           <Card>
@@ -293,17 +286,12 @@ export default function EditProfilePage() {
                 <div className="space-y-4">
                   <div className="flex items-center gap-6">
                     <Avatar className="h-20 w-20">
-                      {profileData.profile_image ? (
-                        <AvatarImage
-                          key={profileData.profile_image}
-                          src={profileData.profile_image}
-                          alt={profileData.name || "プロフィール"}
-                        />
-                      ) : (
-                        <AvatarFallback className="text-xl bg-slate-200 text-slate-700">
-                          {profileData.name.slice(0, 2).toUpperCase() || "??"}
-                        </AvatarFallback>
-                      )}
+                      <AvatarImage
+                        src={profileData.profile_image || undefined}
+                      />
+                      <AvatarFallback className="text-xl bg-slate-200 text-slate-700">
+                        {profileData.name?.charAt(0) || "U"}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="space-y-3">
                       <div>

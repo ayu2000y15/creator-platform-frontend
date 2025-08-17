@@ -757,10 +757,20 @@ export default function UserProfilePage() {
     { key: "likes" as const, label: "いいね", icon: Heart },
   ];
 
-  if (loading) {
+  // ヘッダータイトルを動的に設定
+  const getHeaderTitle = () => {
+    if (profile) {
+      return `${
+        profile.display_name || profile.username || "ユーザー"
+      }のプロフィール`;
+    }
+    return "プロフィール";
+  };
+
+  if (loading || profileLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <AppHeader />
+        <AppHeader title="プロフィール" />
         <div className="max-w-2xl mx-auto p-4">
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -770,10 +780,10 @@ export default function UserProfilePage() {
     );
   }
 
-  if (error || !profile) {
+  if (error || (!profileLoading && !profile)) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <AppHeader />
+        <AppHeader title="プロフィール" />
         <div className="max-w-2xl mx-auto p-4">
           <div className="text-center py-8 text-red-500">
             {error || "プロフィールが見つかりません"}
@@ -785,7 +795,7 @@ export default function UserProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AppHeader />
+      <AppHeader title={getHeaderTitle()} />
       <div className="max-w-2xl mx-auto p-4">
         {/* 戻るボタン */}
         <div className="mb-4">
@@ -804,9 +814,9 @@ export default function UserProfilePage() {
           <CardContent className="p-6">
             <div className="flex items-start space-x-4">
               <Avatar className="w-16 h-16">
-                <AvatarImage src={profile.avatar || "/placeholder-user.jpg"} />
-                <AvatarFallback>
-                  <User className="w-8 h-8" />
+                <AvatarImage src={profile.avatar || undefined} />
+                <AvatarFallback className="text-sm">
+                  {profile?.display_name?.charAt(0) || "U"}
                 </AvatarFallback>
               </Avatar>
 
@@ -990,8 +1000,6 @@ export default function UserProfilePage() {
 
         {/* 投稿一覧 */}
         <div>
-          <h2 className="text-lg font-semibold mb-4">投稿</h2>
-
           {/* タブナビゲーション */}
           <div className="mb-6">
             <div className="border-b border-gray-200">

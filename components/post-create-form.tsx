@@ -859,23 +859,19 @@ export default function PostCreateForm({
               className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50"
               onClick={() => setExpandedVideo(null)}
             >
-              <div className="relative max-w-4xl max-h-screen p-4">
+              <div className="relative w-full h-full flex items-center justify-center p-4">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="absolute top-6 right-6 z-10 bg-white"
+                  className="absolute top-4 right-4 z-10 bg-white"
                   onClick={() => setExpandedVideo(null)}
                 >
                   <X className="w-4 h-4" />
                 </Button>
                 <video
                   src={expandedVideo}
-                  className={`max-w-full max-h-full object-contain ${
-                    formData.content_type === "short_video"
-                      ? "aspect-[9/16]"
-                      : "aspect-video"
-                  }`}
+                  className="max-w-full max-h-full w-auto h-auto object-contain"
                   controls
                   autoPlay
                   onClick={(e) => e.stopPropagation()}

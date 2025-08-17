@@ -53,7 +53,7 @@ export default function ProfilePage() {
   }
 
   // authContextからuserとloadingを分割代入で受け取る
-  const { user, loading } = authContext;
+  const { user, userStats, loading } = authContext;
 
   const handleEditProfile = () => {
     router.push("/profile/edit");
@@ -77,7 +77,7 @@ export default function ProfilePage() {
   }
 
   // これ以降は user が存在することが保証されている
-  const userInitials = user.name.slice(0, 2);
+  const userInitials = user.name?.charAt(0) || "U";
 
   // 生年月日の表示フォーマット関数
   const formatBirthday = (birthday: string, visibility: string) => {
@@ -101,17 +101,10 @@ export default function ProfilePage() {
             <CardHeader>
               <div className="flex items-start gap-6">
                 <Avatar className="h-24 w-24">
-                  {user.profile_image ? (
-                    <AvatarImage
-                      key={user.profile_image}
-                      src={user.profile_image}
-                      alt={user.name}
-                    />
-                  ) : (
-                    <AvatarFallback className="text-2xl">
-                      {userInitials}
-                    </AvatarFallback>
-                  )}
+                  <AvatarImage src={user.profile_image || undefined} />
+                  <AvatarFallback className="text-2xl">
+                    {userInitials}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <div className="flex items-start justify-between">
@@ -271,15 +264,21 @@ export default function ProfilePage() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-slate-900">12</div>
-                  <p className="text-sm text-slate-600">作品数</p>
+                  <div className="text-2xl font-bold text-slate-900">
+                    {userStats?.post_count ?? 0}
+                  </div>
+                  <p className="text-sm text-slate-600">投稿数</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-slate-900">1,234</div>
+                  <div className="text-2xl font-bold text-slate-900">
+                    {userStats?.total_views ?? 0}
+                  </div>
                   <p className="text-sm text-slate-600">総ビュー数</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-slate-900">89</div>
+                  <div className="text-2xl font-bold text-slate-900">
+                    {userStats?.follower_count ?? 0}
+                  </div>
                   <p className="text-sm text-slate-600">フォロワー数</p>
                 </div>
               </div>

@@ -17,7 +17,7 @@ import { EmailVerificationBanner } from "@/components/email-verification-banner"
 import AppHeader from "@/components/app-header";
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth();
+  const { user, userStats, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -56,12 +56,13 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">総作品数</CardTitle>
+              <CardTitle className="text-sm font-medium">総投稿数</CardTitle>
               <TrendingUp className="h-4 w-4 text-slate-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">12</div>
-              <p className="text-xs text-slate-600">先月から +2</p>
+              <div className="text-2xl font-bold">
+                {userStats?.post_count ?? 0}
+              </div>
             </CardContent>
           </Card>
 
@@ -71,8 +72,9 @@ export default function DashboardPage() {
               <TrendingUp className="h-4 w-4 text-slate-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">1,234</div>
-              <p className="text-xs text-slate-600">先月から +180</p>
+              <div className="text-2xl font-bold">
+                {userStats?.total_views ?? 0}
+              </div>
             </CardContent>
           </Card>
 
@@ -84,8 +86,9 @@ export default function DashboardPage() {
               <TrendingUp className="h-4 w-4 text-slate-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">89</div>
-              <p className="text-xs text-slate-600">先月から +12</p>
+              <div className="text-2xl font-bold">
+                {userStats?.follower_count ?? 0}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -95,34 +98,32 @@ export default function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>新しい作品を作成</CardTitle>
-              <CardDescription>
-                新しいプロジェクトを始めましょう
-              </CardDescription>
+              <CardDescription>新しい投稿を始めましょう</CardDescription>
             </CardHeader>
             <CardContent>
               <Button className="w-full">
                 <Plus className="h-4 w-4 mr-2" />
-                作品を作成
+                投稿を作成
               </Button>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>最近の作品</CardTitle>
-              <CardDescription>最近更新された作品一覧</CardDescription>
+              <CardTitle>最近の投稿</CardTitle>
+              <CardDescription>最近更新された投稿一覧</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium">サンプル作品 1</p>
+                  <p className="font-medium">サンプル投稿 1</p>
                   <p className="text-sm text-slate-600">2日前に更新</p>
                 </div>
                 <Badge variant="secondary">公開中</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium">サンプル作品 2</p>
+                  <p className="font-medium">サンプル投稿 2</p>
                   <p className="text-sm text-slate-600">1週間前に更新</p>
                 </div>
                 <Badge variant="outline">下書き</Badge>

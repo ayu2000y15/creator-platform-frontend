@@ -10,7 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
+import api from "@/lib/api";
 import PostCreateModal from "@/components/post-create-modal";
+import AppHeader from "@/components/app-header";
 import {
   ArrowLeft,
   Heart,
@@ -78,6 +80,15 @@ export default function PostDetailPage() {
     profile_image: "/api/placeholder/32/32",
   };
 
+  // 投稿のビューを記録する関数
+  const recordPostView = async (postId: string) => {
+    try {
+      await api.post(`/posts/${postId}/view`);
+    } catch (error) {
+      console.error("Failed to record post view:", error);
+    }
+  };
+
   // 投稿とコメントを読み込み
   useEffect(() => {
     const loadPostAndComments = async () => {
@@ -89,6 +100,9 @@ export default function PostDetailPage() {
         const postResponse = await postApi.getPost(postId);
         setPost(postResponse);
 
+        // 投稿のビューを記録
+        await recordPostView(postId);
+
         // コメントの読み込みは別途試行（失敗してもエラーにしない）
         try {
           const commentsResponse = await commentApi.getComments(postId);
@@ -97,8 +111,24 @@ export default function PostDetailPage() {
           console.warn("Failed to load comments:", commentError);
           setComments([]);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to load post:", error);
+
+        // 403エラーの場合は権限エラーとして処理
+        if (error.response?.status === 403) {
+          setApiError("この投稿を閲覧する権限がありません");
+          setLoading(false);
+          return;
+        }
+
+        // 404エラーの場合は投稿が存在しないとして処理
+        if (error.response?.status === 404) {
+          setApiError("投稿が見つかりません");
+          setLoading(false);
+          return;
+        }
+
+        // その他のエラーの場合はAPIエラーとしてダミーデータを表示
         setApiError("APIが利用できません");
 
         // APIが利用できない場合のダミーデータ
@@ -1187,16 +1217,36 @@ export default function PostDetailPage() {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg text-gray-600">投稿が見つかりません</p>
-          <Button
-            variant="outline"
-            onClick={() => router.back()}
-            className="mt-4"
-          >
-            戻る
-          </Button>
+      <div className="min-h-screen bg-gray-50">
+        <AppHeader title="投稿詳細" />
+        <div className="max-w-2xl mx-auto px-4 py-6">
+          <div className="mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.back()}
+              className="flex items-center space-x-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>戻る</span>
+            </Button>
+          </div>
+          <div className="text-center py-8">
+            <p className="text-lg text-gray-600 mb-4">
+              {apiError === "この投稿を閲覧する権限がありません"
+                ? "この投稿を閲覧する権限がありません"
+                : apiError === "投稿が見つかりません"
+                ? "投稿が見つかりません"
+                : "投稿が見つかりません"}
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => router.back()}
+              className="mt-4"
+            >
+              戻る
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -1204,27 +1254,27 @@ export default function PostDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ヘッダー */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center">
+      <AppHeader title="投稿詳細" />
+
+      <div className="max-w-2xl mx-auto px-4 py-6">
+        {/* 戻るボタン */}
+        <div className="mb-4">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => router.back()}
-            className="mr-3"
+            className="flex items-center space-x-2"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
+            <span>戻る</span>
           </Button>
-          <h1 className="text-lg font-semibold">投稿詳細</h1>
           {apiError && (
             <span className="ml-4 text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded">
               デモモード
             </span>
           )}
         </div>
-      </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6">
         {/* 投稿コンテンツ */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           {/* ユーザー情報 */}
@@ -1599,19 +1649,19 @@ export default function PostDetailPage() {
           className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50"
           onClick={() => setExpandedVideo(null)}
         >
-          <div className="relative max-w-4xl max-h-screen p-4">
+          <div className="relative w-full h-full flex items-center justify-center p-4">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="absolute top-6 right-6 z-10 bg-white"
+              className="absolute top-4 right-4 z-10 bg-white"
               onClick={() => setExpandedVideo(null)}
             >
               <X className="w-4 h-4" />
             </Button>
             <video
               src={expandedVideo}
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-full w-auto h-auto object-contain"
               controls
               autoPlay
               onClick={(e) => e.stopPropagation()}

@@ -33,6 +33,7 @@ import {
   MessageCircle,
   Share2,
   MoreVertical,
+  Eye,
   Globe,
   Users,
   UserCheck,
@@ -235,7 +236,8 @@ export default function PostCard({
               video.currentTime = 0;
             }
           }}
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             setExpandedVideo(media.file_path);
           }}
         />
@@ -586,11 +588,23 @@ export default function PostCard({
     // インタラクティブな要素をクリックした場合は投稿遷移を防ぐ
     const target = e.target as HTMLElement;
     const isInteractiveElement = target.closest(
-      'button, a, [role="button"], .interactive-element'
+      'button, a, [role="button"], .interactive-element, video, [data-radix-collection-item]'
     );
 
     if (!isInteractiveElement) {
-      router.push(`/posts/${post.id}`);
+      // 自分の投稿の場合は常に詳細ページに遷移可能
+      const isOwnPost = currentUser && currentUser.id === post.user.id;
+
+      // 公開範囲チェック：自分の投稿または公開投稿は詳細表示可能
+      const canViewDetail =
+        isOwnPost ||
+        post.view_permission === "public" ||
+        (post.view_permission === "followers" && currentUser) ||
+        (post.view_permission === "mutuals" && currentUser);
+
+      if (canViewDetail) {
+        router.push(`/posts/${post.id}`);
+      }
     }
   };
 
@@ -622,7 +636,10 @@ export default function PostCard({
             <div className="flex-shrink-0 pt-1">
               <Avatar
                 className="w-8 h-8 sm:w-10 sm:h-10 cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => handleProfileClick(post.user.id.toString())}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleProfileClick(post.user.id.toString());
+                }}
               >
                 <AvatarImage src={post.user.profile_image || undefined} />
                 <AvatarFallback className="text-xs sm:text-sm">
@@ -699,7 +716,7 @@ export default function PostCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
                     handleEdit();
@@ -793,7 +810,8 @@ export default function PostCard({
                         <div
                           key={media.id}
                           className="relative aspect-video rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-90 transition-opacity"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             if (
                               media.file_type.startsWith("image/") &&
                               post.media
@@ -851,10 +869,11 @@ export default function PostCard({
                 <div className="flex items-start space-x-2 mb-2">
                   <Avatar
                     className="w-5 h-5 sm:w-6 sm:h-6 border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={() =>
+                    onClick={(e) => {
+                      e.stopPropagation();
                       post.quoted_post &&
-                      handleProfileClick(post.quoted_post.user.id.toString())
-                    }
+                        handleProfileClick(post.quoted_post.user.id.toString());
+                    }}
                   >
                     <AvatarImage
                       src={post.quoted_post.user.profile_image || undefined}
@@ -918,7 +937,8 @@ export default function PostCard({
                             <div
                               key={media.id}
                               className="relative aspect-video rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-90 transition-opacity"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 if (
                                   media.file_type.startsWith("image/") &&
                                   post.quoted_post?.media
@@ -981,7 +1001,16 @@ export default function PostCard({
                     引用コメント:
                   </div>
                   <div className="flex items-start space-x-2">
-                    <Avatar className="w-5 h-5 sm:w-6 sm:h-6 border border-gray-300">
+                    <Avatar
+                      className="w-5 h-5 sm:w-6 sm:h-6 border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        post.quoted_reply &&
+                          handleProfileClick(
+                            post.quoted_reply.user.id.toString()
+                          );
+                      }}
+                    >
                       <AvatarImage
                         src={post.quoted_reply.user.profile_image || undefined}
                       />
@@ -1012,7 +1041,16 @@ export default function PostCard({
                   >
                     <div className="text-xs text-gray-600 mb-2">元の投稿:</div>
                     <div className="flex items-start space-x-2">
-                      <Avatar className="w-5 h-5 sm:w-6 sm:h-6 border border-gray-300">
+                      <Avatar
+                        className="w-5 h-5 sm:w-6 sm:h-6 border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          post.quoted_reply?.post &&
+                            handleProfileClick(
+                              post.quoted_reply.post.user.id.toString()
+                            );
+                        }}
+                      >
                         <AvatarImage
                           src={
                             post.quoted_reply.post.user.profile_image ||
@@ -1123,6 +1161,11 @@ export default function PostCard({
                 <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="ml-1 text-xs">{post.quotes_count}</span>
               </Button>
+
+              <div className="flex items-center text-muted-foreground">
+                <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="ml-1 text-xs">{post.views_count || 0}</span>
+              </div>
             </div>
 
             <Button
@@ -1227,19 +1270,19 @@ export default function PostCard({
           className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50"
           onClick={() => setExpandedVideo(null)}
         >
-          <div className="relative max-w-4xl max-h-screen p-4">
+          <div className="relative w-full h-full flex items-center justify-center p-4">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="absolute top-6 right-6 z-10 bg-white"
+              className="absolute top-4 right-4 z-10 bg-white"
               onClick={() => setExpandedVideo(null)}
             >
               <X className="w-4 h-4" />
             </Button>
             <video
               src={expandedVideo}
-              className="object-contain"
+              className="max-w-full max-h-full w-auto h-auto object-contain"
               controls
               autoPlay
               onClick={(e) => e.stopPropagation()}

@@ -18,7 +18,7 @@ export default function PostsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <AppHeader title="投稿" />
+      <AppHeader title="タイムライン" />
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <PostFeed />
       </main>
