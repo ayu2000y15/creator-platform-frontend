@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
+import TabNavigation from "@/components/tab-navigation";
 
 export default function PostFeed() {
   const { toast } = useToast();
@@ -729,27 +730,11 @@ export default function PostFeed() {
     return (
       <div className="max-w-2xl mx-auto space-y-4">
         {/* タブナビゲーション */}
-        <div className="bg-white border-b border-gray-200 sticky top-0 z-40 -mx-4 px-4 mb-6">
-          <div className="max-w-2xl mx-auto">
-            <div className="flex space-x-8">
-              {tabs.map((tab) => (
-                <Button
-                  key={tab.key}
-                  variant="ghost"
-                  onClick={() => handleTabChange(tab.key)}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-none border-b-2 transition-all duration-200 ${
-                    activeTab === tab.key
-                      ? "border-blue-500 text-blue-600 bg-blue-50"
-                      : "border-transparent hover:border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  <tab.icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
+        <TabNavigation
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+        />
 
         {/* ローディング表示 */}
         <div className="flex justify-center py-8">
@@ -778,20 +763,22 @@ export default function PostFeed() {
       {/* タブナビゲーション */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-40 -mx-4 px-4 mb-6">
         <div className="max-w-2xl mx-auto">
-          <div className="flex space-x-8">
+          <div className="flex space-x-1 sm:space-x-8">
             {tabs.map((tab) => (
               <Button
                 key={tab.key}
                 variant="ghost"
                 onClick={() => handleTabChange(tab.key)}
-                className={`flex items-center space-x-2 px-6 py-3 rounded-none border-b-2 transition-all duration-200 ${
+                className={`flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-6 py-3 rounded-none border-b-2 transition-all duration-200 flex-1 sm:flex-none ${
                   activeTab === tab.key
                     ? "border-blue-500 text-blue-600 bg-blue-50"
                     : "border-transparent hover:border-gray-300 hover:bg-gray-50"
                 }`}
               >
-                <tab.icon className="w-4 h-4" />
-                <span>{tab.label}</span>
+                <tab.icon className="w-4 h-4 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline text-sm sm:text-base">
+                  {tab.label}
+                </span>
               </Button>
             ))}
           </div>

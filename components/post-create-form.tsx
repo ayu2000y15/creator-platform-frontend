@@ -508,7 +508,6 @@ export default function PostCreateForm({
                     className="border rounded-lg p-3 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
                     onClick={() => router.push(`/posts/${quotedPost.id}`)}
                   >
-                    <div className="text-sm text-gray-600 mb-2">引用投稿:</div>
                     <div className="font-medium">{quotedPost.user.name}</div>
                     <div className="text-sm mt-1">
                       {quotedPost.text_content}

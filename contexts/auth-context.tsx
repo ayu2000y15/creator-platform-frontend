@@ -63,24 +63,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem("auth_token");
-      if (token) {
-        try {
-          const userData = await authApi.getUser();
-          setUser(userData);
-        } catch (error: any) {
-          console.log("Token validation failed:", error?.response?.status);
-          // トークンが無効な場合のみクリア
-          if (
-            error?.response?.status === 401 ||
-            error?.response?.status === 403
-          ) {
-            localStorage.removeItem("auth_token");
-            setUser(null);
+      try {
+        const token = localStorage.getItem("auth_token");
+        if (token) {
+          try {
+            const userData = await authApi.getUser();
+            setUser(userData);
+          } catch (error: any) {
+            console.log("Token validation failed:", error?.response?.status);
+            // トークンが無効な場合のみクリア
+            if (
+              error?.response?.status === 401 ||
+              error?.response?.status === 403
+            ) {
+              localStorage.removeItem("auth_token");
+              setUser(null);
+            }
           }
         }
+      } catch (error) {
+        console.error("Auth initialization error:", error);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     initAuth();
@@ -376,6 +382,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
+  if (typeof window === "undefined") {
+    // サーバーサイドレンダリング時は初期値を返す
+    return {
+      user: null,
+      loading: true,
+      isAuthenticated: false,
+      requiresTwoFactor: false,
+      login: async () => ({}),
+      register: async () => {},
+      registerWithEmail: async () => {},
+      verifyEmailAndCompleteRegistration: async () => {},
+      logout: async () => {},
+      twoFactorChallenge: async () => {},
+      emailTwoFactorChallenge: async () => {},
+      enableTwoFactor: async () => ({}),
+      disableTwoFactor: async () => {},
+      enableEmailTwoFactor: async () => {},
+      disableEmailTwoFactor: async () => {},
+      updateProfile: async () => {},
+      changePassword: async () => {},
+      uploadProfileImage: async () => "",
+      deleteProfileImage: async () => {},
+      refreshUser: async () => {},
+      resendVerificationEmail: async () => {},
+      checkEmailVerification: async () => false,
+      verifyEmail: async () => {},
+    };
+  }
+
   if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }

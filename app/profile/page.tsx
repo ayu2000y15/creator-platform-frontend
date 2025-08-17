@@ -17,14 +17,43 @@ import { useEffect } from "react";
 import AppHeader from "@/components/app-header";
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth();
+  // --- 修正点 1: すべてのフックをコンポーネントの最上位で呼び出す ---
   const router = useRouter();
 
+  // --- 修正点 2: useAuthを安全に呼び出し、エラーハンドリングを追加 ---
+  let authContext;
+  try {
+    authContext = useAuth();
+  } catch (error) {
+    console.error("Auth context error:", error);
+    authContext = null;
+  }
+
+  // --- 修正点 3: useEffectのロジックをシンプルにする ---
   useEffect(() => {
-    if (!loading && !user) {
+    // AuthProviderでラップされていない場合、または認証情報がない場合にリダイレクト
+    if (!authContext || (!authContext.loading && !authContext.user)) {
       router.push("/login");
     }
-  }, [user, loading, router]);
+  }, [authContext, router]);
+
+  // --- 修正点 2: AuthProviderでラップされていない場合のガード処理 ---
+  // useAuth()がContextの外で呼ばれるとnullやundefinedを返す可能性があるため
+  if (!authContext) {
+    // リダイレクトまでの間、メッセージを表示
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-slate-600">
+            認証情報を読み込めませんでした。ログインページへ移動します...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // authContextからuserとloadingを分割代入で受け取る
+  const { user, loading } = authContext;
 
   const handleEditProfile = () => {
     router.push("/profile/edit");
@@ -34,6 +63,8 @@ export default function ProfilePage() {
     router.push("/profile/security");
   };
 
+  // --- 修正点 4: ローディングとユーザー存在チェックをまとめる ---
+  // 読み込み中、またはリダイレクト前のユーザーがいない状態ではローディング画面を表示
   if (loading || !user) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -45,17 +76,16 @@ export default function ProfilePage() {
     );
   }
 
+  // これ以降は user が存在することが保証されている
   const userInitials = user.name.slice(0, 2);
 
   // 生年月日の表示フォーマット関数
   const formatBirthday = (birthday: string, visibility: string) => {
     if (!birthday || visibility === "hidden") return "非公開";
-
     const date = new Date(birthday);
     if (visibility === "month_day") {
       return `${date.getMonth() + 1}/${date.getDate()}`;
     }
-    // visibility === 'full'
     return date.toLocaleDateString("ja-JP");
   };
 
@@ -73,7 +103,7 @@ export default function ProfilePage() {
                 <Avatar className="h-24 w-24">
                   {user.profile_image ? (
                     <AvatarImage
-                      key={user.profile_image} // 表示を確実に更新するためのkey
+                      key={user.profile_image}
                       src={user.profile_image}
                       alt={user.name}
                     />

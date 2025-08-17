@@ -1343,7 +1343,6 @@ export default function PostDetailPage() {
           {/* 引用投稿表示 */}
           {post.quoted_post && (
             <div className="mb-4 border rounded-lg p-3 bg-gray-50">
-              <div className="text-sm text-gray-600 mb-2">引用投稿:</div>
               <div className="flex items-start space-x-3">
                 <Avatar className="w-8 h-8 flex-shrink-0">
                   <AvatarImage
@@ -1360,6 +1359,59 @@ export default function PostDetailPage() {
                   <div className="text-sm text-gray-800 mt-1">
                     {post.quoted_post.text_content}
                   </div>
+                  {/* 引用投稿のメディア表示 */}
+                  {post.quoted_post.media &&
+                    post.quoted_post.media.length > 0 && (
+                      <div className="mt-2">
+                        {post.quoted_post.content_type === "video" ||
+                        post.quoted_post.content_type === "short_video" ? (
+                          // 動画投稿の場合
+                          <div className="w-full">
+                            {post.quoted_post.media
+                              .filter((media) =>
+                                media.file_type.startsWith("video")
+                              )
+                              .slice(0, 1)
+                              .map((media) => (
+                                <div key={media.id}>
+                                  {renderVideoPreview(
+                                    media,
+                                    post.quoted_post?.content_type ===
+                                      "short_video"
+                                  )}
+                                </div>
+                              ))}
+                          </div>
+                        ) : (
+                          // テキスト投稿の画像の場合
+                          <div className="grid gap-2 grid-cols-2">
+                            {post.quoted_post.media.slice(0, 4).map((media) => (
+                              <div
+                                key={media.id}
+                                className="relative aspect-video rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-90 transition-opacity"
+                              >
+                                {media.file_type.startsWith("image") && (
+                                  <Image
+                                    src={media.file_path}
+                                    alt="引用投稿画像"
+                                    fill
+                                    className="object-cover"
+                                    unoptimized
+                                  />
+                                )}
+                                {media.file_type.startsWith("video") &&
+                                  renderVideoPreview(media, false)}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {post.quoted_post.media.length > 4 && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            +{post.quoted_post.media.length - 4} その他
+                          </div>
+                        )}
+                      </div>
+                    )}
                 </div>
               </div>
             </div>

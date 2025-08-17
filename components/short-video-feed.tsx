@@ -22,6 +22,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
+import TabNavigation from "@/components/tab-navigation";
 
 interface ShortVideoFeedProps {
   activeTab: "recommend" | "following" | "short" | "paid";
@@ -43,6 +44,30 @@ export default function ShortVideoFeed({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenIndex, setFullscreenIndex] = useState(0);
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
+
+  // タブ情報の定義
+  const tabs = [
+    {
+      key: "recommend" as const,
+      label: "おすすめ",
+      icon: Sparkles,
+    },
+    {
+      key: "following" as const,
+      label: "フォロー中",
+      icon: Users,
+    },
+    {
+      key: "short" as const,
+      label: "ショート",
+      icon: Video,
+    },
+    {
+      key: "paid" as const,
+      label: "有料",
+      icon: DollarSign,
+    },
+  ];
 
   const loadPosts = useCallback(
     async (cursor?: string, isRefresh = false) => {
@@ -289,60 +314,11 @@ export default function ShortVideoFeed({
           </div>
 
           {/* タブナビゲーション */}
-          <div className="bg-white border-b border-gray-200 sticky top-0 z-40 -mx-4 px-4 mb-6">
-            <div className="max-w-2xl mx-auto">
-              <div className="flex space-x-8">
-                <Button
-                  variant="ghost"
-                  onClick={() => onTabChange("recommend")}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-none border-b-2 transition-all duration-200 ${
-                    activeTab === "recommend"
-                      ? "border-blue-500 text-blue-600 bg-blue-50"
-                      : "border-transparent hover:border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>おすすめ</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => onTabChange("following")}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-none border-b-2 transition-all duration-200 ${
-                    activeTab === "following"
-                      ? "border-blue-500 text-blue-600 bg-blue-50"
-                      : "border-transparent hover:border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  <Users className="w-4 h-4" />
-                  <span>フォロー中</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => onTabChange("short")}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-none border-b-2 transition-all duration-200 ${
-                    activeTab === "short"
-                      ? "border-blue-500 text-blue-600 bg-blue-50"
-                      : "border-transparent hover:border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  <Video className="w-4 h-4" />
-                  <span>ショート</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => onTabChange("paid")}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-none border-b-2 transition-all duration-200 ${
-                    activeTab === "paid"
-                      ? "border-blue-500 text-blue-600 bg-blue-50"
-                      : "border-transparent hover:border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  <DollarSign className="w-4 h-4" />
-                  <span>有料</span>
-                </Button>
-              </div>
-            </div>
-          </div>
+          <TabNavigation
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={onTabChange}
+          />
 
           {/* ローディング表示 */}
           <div className="flex justify-center py-8">
@@ -373,60 +349,11 @@ export default function ShortVideoFeed({
           </div>
 
           {/* タブナビゲーション */}
-          <div className="bg-white border-b border-gray-200 sticky top-0 z-40 -mx-4 px-4 mb-6">
-            <div className="max-w-2xl mx-auto">
-              <div className="flex space-x-8">
-                <Button
-                  variant="ghost"
-                  onClick={() => onTabChange("recommend")}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-none border-b-2 transition-all duration-200 ${
-                    activeTab === "recommend"
-                      ? "border-blue-500 text-blue-600 bg-blue-50"
-                      : "border-transparent hover:border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>おすすめ</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => onTabChange("following")}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-none border-b-2 transition-all duration-200 ${
-                    activeTab === "following"
-                      ? "border-blue-500 text-blue-600 bg-blue-50"
-                      : "border-transparent hover:border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  <Users className="w-4 h-4" />
-                  <span>フォロー中</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => onTabChange("short")}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-none border-b-2 transition-all duration-200 ${
-                    activeTab === "short"
-                      ? "border-blue-500 text-blue-600 bg-blue-50"
-                      : "border-transparent hover:border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  <Video className="w-4 h-4" />
-                  <span>ショート</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => onTabChange("paid")}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-none border-b-2 transition-all duration-200 ${
-                    activeTab === "paid"
-                      ? "border-blue-500 text-blue-600 bg-blue-50"
-                      : "border-transparent hover:border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  <DollarSign className="w-4 h-4" />
-                  <span>有料</span>
-                </Button>
-              </div>
-            </div>
-          </div>
+          <TabNavigation
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={onTabChange}
+          />
 
           {/* 空の状態 */}
           <div className="text-center py-8 text-gray-500">
@@ -461,60 +388,11 @@ export default function ShortVideoFeed({
           </div>
 
           {/* タブナビゲーション */}
-          <div className="bg-white border-b border-gray-200 sticky top-0 z-40 -mx-4 px-4 mb-6">
-            <div className="max-w-2xl mx-auto">
-              <div className="flex space-x-8">
-                <Button
-                  variant="ghost"
-                  onClick={() => onTabChange("recommend")}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-none border-b-2 transition-all duration-200 ${
-                    activeTab === "recommend"
-                      ? "border-blue-500 text-blue-600 bg-blue-50"
-                      : "border-transparent hover:border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>おすすめ</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => onTabChange("following")}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-none border-b-2 transition-all duration-200 ${
-                    activeTab === "following"
-                      ? "border-blue-500 text-blue-600 bg-blue-50"
-                      : "border-transparent hover:border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  <Users className="w-4 h-4" />
-                  <span>フォロー中</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => onTabChange("short")}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-none border-b-2 transition-all duration-200 ${
-                    activeTab === "short"
-                      ? "border-blue-500 text-blue-600 bg-blue-50"
-                      : "border-transparent hover:border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  <Video className="w-4 h-4" />
-                  <span>ショート</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => onTabChange("paid")}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-none border-b-2 transition-all duration-200 ${
-                    activeTab === "paid"
-                      ? "border-blue-500 text-blue-600 bg-blue-50"
-                      : "border-transparent hover:border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  <DollarSign className="w-4 h-4" />
-                  <span>有料</span>
-                </Button>
-              </div>
-            </div>
-          </div>
+          <TabNavigation
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={onTabChange}
+          />
 
           {/* ショート動画グリッド */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-4">

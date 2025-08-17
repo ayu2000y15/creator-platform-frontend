@@ -18,6 +18,7 @@ import {
   Video,
   Share2,
   Heart,
+  Loader2,
 } from "lucide-react";
 import PostCard from "@/components/post-card";
 import PostCreateModal from "@/components/post-create-modal";
@@ -64,18 +65,36 @@ interface Profile {
   };
 }
 
-export default function ProfilePage() {
+export default function UserProfilePage() {
+  // すべてのフックを最上位で呼び出し
   const params = useParams();
   const router = useRouter();
-  const { user: currentUser } = useAuth();
+
+  // 認証状態の安全な初期化
+  let user = null;
+  let loading = true;
+  let authError = false;
+  let authContext = null;
+
+  try {
+    authContext = useAuth();
+    user = authContext.user;
+    loading = authContext.loading;
+  } catch (error) {
+    console.error("Auth context error:", error);
+    authError = true;
+    loading = false;
+  }
+
   const userId = params?.id;
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [likedPosts, setLikedPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [postsLoading, setPostsLoading] = useState(true);
   const [likedPostsLoading, setLikedPostsLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [quotedPost, setQuotedPost] = useState<Post | undefined>();
@@ -83,6 +102,10 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<
     "text" | "video" | "short_video" | "likes"
   >("text");
+  const [hasMorePosts, setHasMorePosts] = useState(true);
+  const [hasMoreLikes, setHasMoreLikes] = useState(true);
+  const [postsNextCursor, setPostsNextCursor] = useState<string | undefined>();
+  const [likesNextCursor, setLikesNextCursor] = useState<string | undefined>();
 
   // 処理中のアクションを追跡するstate
   const [processingActions, setProcessingActions] = useState<Set<string>>(
@@ -106,7 +129,7 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      setLoading(true);
+      setProfileLoading(true);
       const token = localStorage.getItem("auth_token");
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/users/${userId}/profile`,
@@ -130,40 +153,56 @@ export default function ProfilePage() {
         err instanceof Error ? err.message : "プロフィールの取得に失敗しました";
       setError(errorMessage);
     } finally {
-      setLoading(false);
+      setProfileLoading(false);
     }
   };
 
-  const fetchUserPosts = async () => {
+  const fetchUserPosts = async (cursor?: string) => {
     try {
-      setPostsLoading(true);
+      setPostsLoading(!cursor); // 初回読み込み時のみローディング表示
+      if (cursor) setLoadingMore(true);
+
       const token = localStorage.getItem("auth_token");
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/users/${userId}/posts`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/users/${userId}/posts${
+        cursor ? `?cursor=${cursor}` : ""
+      }`;
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       if (!response.ok) {
         throw new Error("投稿の取得に失敗しました");
       }
 
       const data = await response.json();
-      setPosts(data.data || []);
+      const newPosts = data.data || [];
+
+      if (cursor) {
+        // 追加読み込みの場合は既存の投稿に追加
+        setPosts((prev) => [...prev, ...newPosts]);
+      } else {
+        // 初回読み込みの場合は置き換え
+        setPosts(newPosts);
+      }
+
+      setPostsNextCursor(data.next_cursor);
+      setHasMorePosts(!!data.next_cursor);
     } catch (err: Error | unknown) {
       console.error("投稿取得エラー:", err);
     } finally {
       setPostsLoading(false);
+      setLoadingMore(false);
     }
   };
 
-  const fetchLikedPosts = async () => {
+  const fetchLikedPosts = async (cursor?: string) => {
     try {
-      setLikedPostsLoading(true);
+      setLikedPostsLoading(!cursor); // 初回読み込み時のみローディング表示
+      if (cursor) setLoadingMore(true);
+
       const token = localStorage.getItem("auth_token");
       console.log("Fetching liked posts for user:", userId);
       console.log("Auth token:", token ? "exists" : "missing");
@@ -192,15 +231,15 @@ export default function ProfilePage() {
         }
       }
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/users/${userId}/likes`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/users/${userId}/likes${
+        cursor ? `?cursor=${cursor}` : ""
+      }`;
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       console.log("Response status:", response.status);
       console.log("Response ok:", response.ok);
@@ -213,11 +252,36 @@ export default function ProfilePage() {
 
       const data = await response.json();
       console.log("Liked posts data:", data);
-      setLikedPosts(data.data || []);
+      const newLikedPosts = data.data || [];
+
+      if (cursor) {
+        // 追加読み込みの場合は既存の投稿に追加
+        setLikedPosts((prev) => [...prev, ...newLikedPosts]);
+      } else {
+        // 初回読み込みの場合は置き換え
+        setLikedPosts(newLikedPosts);
+      }
+
+      setLikesNextCursor(data.next_cursor);
+      setHasMoreLikes(!!data.next_cursor);
     } catch (err: Error | unknown) {
       console.error("いいねした投稿取得エラー:", err);
     } finally {
       setLikedPostsLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  // もっと見るボタンのハンドラー
+  const handleLoadMore = () => {
+    if (activeTab === "likes") {
+      if (likesNextCursor && !loadingMore) {
+        fetchLikedPosts(likesNextCursor);
+      }
+    } else {
+      if (postsNextCursor && !loadingMore) {
+        fetchUserPosts(postsNextCursor);
+      }
     }
   };
 
@@ -225,7 +289,7 @@ export default function ProfilePage() {
     if (!profile) return;
 
     // 認証チェック
-    if (!currentUser) {
+    if (!user) {
       router.push(
         `/login?redirect=${encodeURIComponent(
           window.location.pathname
@@ -465,7 +529,7 @@ export default function ProfilePage() {
               (p) =>
                 !(
                   p.is_repost &&
-                  p.repost_user?.id === currentUser?.id &&
+                  p.repost_user?.id === user?.id &&
                   (p.id === originalPostId ||
                     (p.quoted_post && p.quoted_post.id === originalPostId))
                 )
@@ -477,7 +541,7 @@ export default function ProfilePage() {
               (p) =>
                 !(
                   p.is_repost &&
-                  p.repost_user?.id === currentUser?.id &&
+                  p.repost_user?.id === user?.id &&
                   (p.id === originalPostId ||
                     (p.quoted_post && p.quoted_post.id === originalPostId))
                 )
@@ -497,24 +561,24 @@ export default function ProfilePage() {
                   getOriginalPostId(p) === originalPostId
               );
 
-            if (originalPost && currentUser) {
+            if (originalPost && user) {
               // リポスト表示用の投稿を作成
               const repostEntry: Post = {
                 ...originalPost,
                 is_repost: true,
                 repost_user: {
-                  id: currentUser.id,
-                  name: currentUser.name,
-                  username: currentUser.username || undefined,
-                  profile_image: currentUser.profile_image || undefined,
+                  id: user.id,
+                  name: user.name,
+                  username: user.username || undefined,
+                  profile_image: user.profile_image || undefined,
                 },
                 repost_created_at: new Date().toISOString(),
                 // リポスト表示用の一意IDを生成
-                id: `repost_${originalPostId}_${currentUser.id}_${Date.now()}`,
+                id: `repost_${originalPostId}_${user.id}_${Date.now()}`,
               };
 
               // プロフィールページの場合、自分のスパークのみを表示
-              if (profile && profile.id === currentUser.id) {
+              if (profile && profile.id === user.id) {
                 setPosts((prevPosts) => [repostEntry, ...prevPosts]);
               }
             }
@@ -669,7 +733,7 @@ export default function ProfilePage() {
     });
   };
 
-  const isOwnProfile = currentUser && profile && currentUser.id === profile.id;
+  const isOwnProfile = user && profile && user.id === profile.id;
 
   // 投稿をコンテンツタイプでフィルタリング
   const filteredPosts = (() => {
@@ -931,19 +995,19 @@ export default function ProfilePage() {
           {/* タブナビゲーション */}
           <div className="mb-6">
             <div className="border-b border-gray-200">
-              <nav className="-mb-px flex space-x-8">
+              <nav className="-mb-px flex space-x-1 sm:space-x-8">
                 {tabs.map((tab) => (
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
-                    className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap flex items-center ${
+                    className={`py-2 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap flex items-center justify-center flex-1 sm:flex-none ${
                       activeTab === tab.key
                         ? "border-blue-500 text-blue-600"
                         : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     }`}
                   >
-                    <tab.icon className="w-4 h-4 mr-2" />
-                    {tab.label}
+                    <tab.icon className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">{tab.label}</span>
                   </button>
                 ))}
               </nav>
@@ -975,6 +1039,28 @@ export default function ProfilePage() {
                   onDelete={handlePostDelete}
                 />
               ))}
+
+              {/* もっと見るボタン */}
+              {((activeTab === "likes" && hasMoreLikes) ||
+                (activeTab !== "likes" && hasMorePosts)) && (
+                <div className="flex justify-center py-4">
+                  <Button
+                    variant="outline"
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="min-w-32"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        読み込み中...
+                      </>
+                    ) : (
+                      "もっと見る"
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
