@@ -94,7 +94,7 @@ export default function DashboardPage() {
         </div>
 
         {/* アクションセクション */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle>新しい作品を作成</CardTitle>
@@ -130,7 +130,7 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </div> */}
       </main>
 
       {/* 固定投稿ボタン */}
