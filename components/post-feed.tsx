@@ -100,10 +100,7 @@ export default function PostFeed() {
         const newPosts =
           isRefresh || !cursor ? response.data : [...posts, ...response.data];
 
-        // 投稿を時系列順にソート（最新が上）
-        const sortedPosts = sortPostsByTime(newPosts);
-
-        setPosts(sortedPosts);
+        setPosts(newPosts);
         setNextCursor(response.next_cursor);
         setHasMore(!!response.next_cursor);
 
@@ -111,7 +108,7 @@ export default function PostFeed() {
         setTabCache((prev) => ({
           ...prev,
           [activeTab]: {
-            posts: sortedPosts,
+            posts: newPosts,
             nextCursor: response.next_cursor,
             hasMore: !!response.next_cursor,
             lastUpdated: Date.now(),
@@ -497,9 +494,6 @@ export default function PostFeed() {
               )
           );
 
-          // 投稿を時系列順にソート（最新が上）
-          updatedPosts = sortPostsByTime(updatedPosts);
-
           // 最終的な状態を設定
           setPosts(updatedPosts);
           setTabCache((prev) => ({
@@ -558,9 +552,6 @@ export default function PostFeed() {
 
             updatedPosts = [repostEntry, ...updatedPosts];
           }
-
-          // 投稿を時系列順にソート（最新が上）
-          updatedPosts = sortPostsByTime(updatedPosts);
 
           // 最終的な状態を設定
           setPosts(updatedPosts);
