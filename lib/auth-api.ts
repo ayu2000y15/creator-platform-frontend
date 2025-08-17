@@ -22,6 +22,7 @@ export interface LoginResponse {
   user: User;
   token: string;
   two_factor?: boolean;
+  two_factor_method?: "app" | "email";
 }
 
 export interface RegisterData {

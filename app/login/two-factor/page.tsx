@@ -40,7 +40,10 @@ export default function TwoFactorPage() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      router.push("/dashboard");
+      const redirectPath =
+        sessionStorage.getItem("login_redirect") || "/dashboard";
+      sessionStorage.removeItem("login_redirect"); // クリーンアップ
+      router.push(redirectPath);
     }
   }, [isAuthenticated, loading, router]);
 

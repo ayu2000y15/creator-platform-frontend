@@ -1,4 +1,4 @@
-import axios from "axios"
+import axios from "axios";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -7,14 +7,14 @@ const api = axios.create({
     Accept: "application/json",
   },
   withCredentials: true,
-})
+});
 
 // リクエストインターセプター（認証トークン付与とデバッグログ）
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem("auth_token")
+    const token = localStorage.getItem("auth_token");
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+      config.headers.Authorization = `Bearer ${token}`;
     }
   }
 
@@ -24,10 +24,10 @@ api.interceptors.request.use((config) => {
     baseURL: config.baseURL,
     data: config.data,
     headers: config.headers,
-  })
+  });
 
-  return config
-})
+  return config;
+});
 
 // レスポンスインターセプター（エラーハンドリングとデバッグログ）
 api.interceptors.response.use(
@@ -36,8 +36,8 @@ api.interceptors.response.use(
       status: response.status,
       url: response.config.url,
       data: response.data,
-    })
-    return response
+    });
+    return response;
   },
   (error) => {
     console.error("API Error:", {
@@ -46,24 +46,32 @@ api.interceptors.response.use(
       message: error.response?.data?.message,
       errors: error.response?.data?.errors,
       data: error.response?.data,
-    })
+    });
 
     if (error.response?.status === 401) {
       // 認証エラーの場合、トークンを削除
       if (typeof window !== "undefined") {
-        localStorage.removeItem("auth_token")
+        localStorage.removeItem("auth_token");
 
         // 初期化時のユーザー情報取得エラーの場合はリダイレクトしない
-        const isInitialUserFetch = error.config?.url?.includes("/user") && error.config?.method === "get"
+        const isInitialUserFetch =
+          error.config?.url?.includes("/user") &&
+          error.config?.method === "get";
 
-        if (!isInitialUserFetch) {
+        // ログインページまたは登録ページにいる場合はリダイレクトしない
+        const isOnAuthPage =
+          window.location.pathname === "/login" ||
+          window.location.pathname === "/register" ||
+          window.location.pathname.startsWith("/email-verification");
+
+        if (!isInitialUserFetch && !isOnAuthPage) {
           // 通常のAPI呼び出しでの401エラーの場合のみリダイレクト
-          window.location.href = "/login"
+          window.location.href = "/login";
         }
       }
     }
-    return Promise.reject(error)
-  },
-)
+    return Promise.reject(error);
+  }
+);
 
-export default api
+export default api;

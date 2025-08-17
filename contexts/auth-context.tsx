@@ -69,9 +69,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const userData = await authApi.getUser();
           setUser(userData);
         } catch (error: any) {
-          console.log("Token validation failed, clearing auth state");
-          localStorage.removeItem("auth_token");
-          setUser(null);
+          console.log("Token validation failed:", error?.response?.status);
+          // トークンが無効な場合のみクリア
+          if (
+            error?.response?.status === 401 ||
+            error?.response?.status === 403
+          ) {
+            localStorage.removeItem("auth_token");
+            setUser(null);
+          }
         }
       }
       setLoading(false);

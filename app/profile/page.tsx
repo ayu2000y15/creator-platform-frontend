@@ -10,17 +10,11 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import {
-  ArrowLeft,
-  Edit,
-  User,
-  Shield,
-  Calendar,
-  Settings,
-} from "lucide-react";
+import { Edit, User, Shield, Calendar, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import AppHeader from "@/components/app-header";
 
 export default function ProfilePage() {
   const { user, loading } = useAuth();
@@ -31,10 +25,6 @@ export default function ProfilePage() {
       router.push("/login");
     }
   }, [user, loading, router]);
-
-  const handleBackToDashboard = () => {
-    router.push("/dashboard");
-  };
 
   const handleEditProfile = () => {
     router.push("/profile/edit");
@@ -71,26 +61,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* ヘッダー */}
-      <header className="bg-white border-b border-slate-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={handleBackToDashboard}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                ダッシュボードに戻る
-              </Button>
-            </div>
-            <h1 className="text-xl font-semibold text-slate-900">
-              プロフィール
-            </h1>
-            <Button onClick={handleEditProfile}>
-              <Edit className="h-4 w-4 mr-2" />
-              編集
-            </Button>
-          </div>
-        </div>
-      </header>
+      <AppHeader title="プロフィール" />
 
       {/* メインコンテンツ */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -113,20 +84,30 @@ export default function ProfilePage() {
                   )}
                 </Avatar>
                 <div className="flex-1">
-                  <CardTitle className="text-2xl mb-1">{user.name}</CardTitle>
-                  {user.username && (
-                    <p className="text-slate-500 text-sm mb-2">
-                      @{user.username}
-                    </p>
-                  )}
-                  <CardDescription className="text-base mb-3">
-                    {user.email}
-                  </CardDescription>
-                  {user.bio && (
-                    <p className="text-slate-700 mb-3 whitespace-pre-wrap">
-                      {user.bio}
-                    </p>
-                  )}
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-2xl mb-1">
+                        {user.name}
+                      </CardTitle>
+                      {user.username && (
+                        <p className="text-slate-500 text-sm mb-2">
+                          @{user.username}
+                        </p>
+                      )}
+                      <CardDescription className="text-base mb-3">
+                        {user.email}
+                      </CardDescription>
+                      {user.bio && (
+                        <p className="text-slate-700 mb-3 whitespace-pre-wrap">
+                          {user.bio}
+                        </p>
+                      )}
+                    </div>
+                    <Button onClick={handleEditProfile}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      編集
+                    </Button>
+                  </div>
                   <div className="flex items-center gap-2">
                     {user.two_factor_confirmed_at ||
                     user.email_two_factor_enabled ? (

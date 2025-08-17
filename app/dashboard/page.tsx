@@ -8,16 +8,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Settings, LogOut, Plus, TrendingUp } from "lucide-react";
+import { Plus, TrendingUp, Edit } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { EmailVerificationBanner } from "@/components/email-verification-banner";
+import AppHeader from "@/components/app-header";
 
 export default function DashboardPage() {
-  const { user, logout, loading } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -25,19 +25,6 @@ export default function DashboardPage() {
       router.push("/login");
     }
   }, [user, loading, router]);
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      router.push("/login");
-    } catch (error) {
-      console.error("ログアウトエラー:", error);
-    }
-  };
-
-  const handleProfileClick = () => {
-    router.push("/profile");
-  };
 
   if (loading || !user) {
     return (
@@ -50,51 +37,9 @@ export default function DashboardPage() {
     );
   }
 
-  const userInitials = user.name.slice(0, 2);
-
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* ヘッダー */}
-      <header className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-semibold text-slate-900">
-              Creator Platform
-            </h1>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleProfileClick}
-                className="flex items-center gap-2 hover:bg-slate-100 rounded-lg p-2 transition-colors"
-              >
-                <Avatar className="h-8 w-8">
-                  {user.profile_image ? (
-                    <AvatarImage
-                      key={user.profile_image} // 表示を確実に更新するためのkey
-                      src={user.profile_image}
-                      alt={user.name}
-                    />
-                  ) : (
-                    <AvatarFallback>
-                      {" "}
-                      {/* text-2xlを削除 */}
-                      {userInitials}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                {/* <span className="text-sm font-medium text-slate-700">
-                  {user.name}
-                </span> */}
-              </button>
-              <Button variant="ghost" size="sm">
-                <Settings className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <AppHeader title="ダッシュボード" />
 
       {/* メインコンテンツ */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -186,6 +131,14 @@ export default function DashboardPage() {
           </Card>
         </div>
       </main>
+
+      {/* 固定投稿ボタン */}
+      <Button
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow z-50"
+        onClick={() => router.push("/dashboard/post")}
+      >
+        <Edit className="h-6 w-6" />
+      </Button>
     </div>
   );
 }
