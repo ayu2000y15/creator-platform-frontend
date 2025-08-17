@@ -261,7 +261,7 @@ export default function PostCard({
     <Card className="mb-4">
       {/* リポスト表示（コメントスパークも含む） */}
       {((post.is_repost && post.repost_user) || isCommentSpark(post)) && (
-        <div className="px-4 pt-3 pb-1">
+        <div className="px-4 pb-1">
           <div className="flex items-center text-sm text-muted-foreground">
             <Zap className="w-4 h-4 mr-2 text-yellow-500" />
             <span>
@@ -805,7 +805,7 @@ export default function PostCard({
             </Button>
             <video
               src={expandedVideo}
-              className="max-w-full max-h-full object-contain"
+              className="object-contain"
               controls
               autoPlay
               onClick={(e) => e.stopPropagation()}

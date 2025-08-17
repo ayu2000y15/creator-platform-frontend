@@ -101,24 +101,27 @@ export default function ImageModal({
       )}
 
       {/* 画像 */}
-      <div className="relative max-w-screen-lg max-h-screen-90 p-4">
+      <div className="relative w-full h-full max-w-[90vw] max-h-[90vh] flex items-center justify-center p-4">
         <Image
           src={images[currentIndex]}
           alt={`Image ${currentIndex + 1}`}
-          width={800}
-          height={600}
-          className="max-w-full max-h-full object-contain"
+          width={0}
+          height={0}
+          sizes="90vw"
+          className="max-w-full max-h-full w-auto h-auto object-contain"
           onClick={(e) => e.stopPropagation()}
           unoptimized
         />
 
-        {/* インジケーター */}
-        {images.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
-            {currentIndex + 1} / {images.length}
-          </div>
-        )}
+        {/* (indicator removed from inside image container) */}
       </div>
+
+      {/* 画像下のインジケーター */}
+      {images.length > 1 && (
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+          {currentIndex + 1} / {images.length}
+        </div>
+      )}
 
       {/* 背景クリックで閉じる */}
       <div className="absolute inset-0 -z-10" onClick={onClose} />

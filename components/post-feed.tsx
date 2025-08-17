@@ -99,7 +99,10 @@ export default function PostFeed() {
         const newPosts =
           isRefresh || !cursor ? response.data : [...posts, ...response.data];
 
-        setPosts(newPosts);
+        // 投稿を時系列順にソート（最新が上）
+        const sortedPosts = sortPostsByTime(newPosts);
+
+        setPosts(sortedPosts);
         setNextCursor(response.next_cursor);
         setHasMore(!!response.next_cursor);
 
@@ -107,7 +110,7 @@ export default function PostFeed() {
         setTabCache((prev) => ({
           ...prev,
           [activeTab]: {
-            posts: newPosts,
+            posts: sortedPosts,
             nextCursor: response.next_cursor,
             hasMore: !!response.next_cursor,
             lastUpdated: Date.now(),
@@ -187,6 +190,17 @@ export default function PostFeed() {
   }, [activeTab]);
 
   // 元の投稿IDを取得するヘルパー関数
+  // 投稿を時系列順にソートする関数（最新が上）
+  const sortPostsByTime = (posts: Post[]): Post[] => {
+    return posts.sort((a, b) => {
+      const timeA =
+        a.is_repost && a.repost_created_at ? a.repost_created_at : a.created_at;
+      const timeB =
+        b.is_repost && b.repost_created_at ? b.repost_created_at : b.created_at;
+      return new Date(timeB).getTime() - new Date(timeA).getTime();
+    });
+  };
+
   const getOriginalPostId = (post: Post): string => {
     // リポスト投稿の場合は quoted_post の ID を返す
     if (post.is_repost && post.quoted_post) {
@@ -482,6 +496,9 @@ export default function PostFeed() {
               )
           );
 
+          // 投稿を時系列順にソート（最新が上）
+          updatedPosts = sortPostsByTime(updatedPosts);
+
           // 最終的な状態を設定
           setPosts(updatedPosts);
           setTabCache((prev) => ({
@@ -540,6 +557,9 @@ export default function PostFeed() {
 
             updatedPosts = [repostEntry, ...updatedPosts];
           }
+
+          // 投稿を時系列順にソート（最新が上）
+          updatedPosts = sortPostsByTime(updatedPosts);
 
           // 最終的な状態を設定
           setPosts(updatedPosts);
