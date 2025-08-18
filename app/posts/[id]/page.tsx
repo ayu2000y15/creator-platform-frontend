@@ -706,7 +706,7 @@ export default function PostDetailPage() {
       toast({
         title: wasSparked
           ? "スパークを取り消しました（デモモード）"
-          : "共有しました（デモモード）",
+          : "スパークしました（デモモード）",
         variant: "default",
       });
       return;
@@ -720,7 +720,7 @@ export default function PostDetailPage() {
       }
 
       toast({
-        title: wasSparked ? "スパークを取り消しました" : "共有しました",
+        title: wasSparked ? "スパークを取り消しました" : "スパークしました",
         variant: "default",
       });
     } catch (error) {
@@ -952,21 +952,106 @@ export default function PostDetailPage() {
                 {comment.content}
               </p>
               <div className="flex items-center space-x-4 text-gray-500">
+                {/* 返信ボタン（表示しないが将来のために残す）
+                <button
+                  onClick={() =>
+                    setReplyingTo(showMyReplyForm ? null : comment.id)
+                  }
+                  className="flex items-center space-x-1 hover:text-blue-600 transition-colors p-1 rounded hover:bg-blue-50 text-sm"
+                >
+                  <Reply className="w-4 h-4" />
+                  <span>返信</span>
+                  {comment.replies && comment.replies.length > 0 && (
+                    <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
+                      {comment.replies.length}
+                    </span>
+                  )}
+                </button>
+                */}
+
                 <button
                   onClick={() => handleCommentLike(comment.id)}
                   className={`flex items-center space-x-1 transition-colors p-1 rounded ${
                     isLiked ? "text-red-600" : "hover:text-red-600"
                   }`}
                 >
-                  <Heart className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`} />
+                  <Heart
+                    className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`}
+                  />
                   <span className="text-sm">{likesCount}</span>
                 </button>
+
+                {/* スパーク（リポスト）ボタン（非表示で保持）
+                <button
+                  onClick={() => handleCommentSpark(comment.id)}
+                  className={`flex items-center space-x-1 transition-colors p-1 rounded ${
+                    isSparked ? "text-yellow-600" : "hover:text-yellow-600"
+                  }`}
+                >
+                  <Repeat
+                    className={`w-4 h-4 ${isSparked ? "fill-current" : ""}`}
+                  />
+                  <span className="text-sm">{sparksCount}</span>
+                </button>
+                */}
+
+                {/* 引用ボタン（非表示で保持）
+                <button
+                  onClick={() => handleCommentQuote(comment)}
+                  className="flex items-center space-x-1 hover:text-green-600 transition-colors p-1 rounded hover:bg-green-50 text-sm"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span className="text-sm">{comment.quotes_count || 0}</span>
+                </button>
+                */}
               </div>
             </div>
           </div>
 
           {/* この親コメントへの返信入力フォーム */}
-          {/* 返信フォームは非表示（コメント欄は「いいね」のみ） */}
+          {/* 返信フォームは非表示（コメント欄は「いいね」のみ）
+          {showMyReplyForm && (
+            <div className="pl-12 pt-4 mt-2">
+              <div className="flex items-start space-x-3">
+                <Avatar className="w-8 h-8 flex-shrink-0">
+                  <AvatarImage src={demoUser?.profile_image || undefined} />
+                  <AvatarFallback className="text-sm">
+                    {demoUser?.name?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <Textarea
+                    placeholder={`${comment.user?.name || "user"} への返信...`}
+                    value={localReplyText}
+                    onChange={(e) => setLocalReplyText(e.target.value)}
+                    maxLength={100}
+                    rows={3}
+                    className="resize-none text-sm"
+                  />
+                  <div className="flex justify-end items-center mt-2 space-x-2">
+                    <span className="text-xs text-gray-500 flex-1">
+                      {localReplyText.length}/100
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setReplyingTo(null)}
+                    >
+                      キャンセル
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleReplySubmit}
+                      disabled={!localReplyText.trim() || submitting}
+                    >
+                      <Repeat className="w-3 h-3 mr-1.5" /> 返信
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          */}
 
           {/* 返信一覧 */}
           {comment.replies && comment.replies.length > 0 && (
