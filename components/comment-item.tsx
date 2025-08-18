@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Comment } from "@/lib/comment-api";
-import { Heart, Reply, Send, Loader2 } from "lucide-react";
+import { Heart, Reply, Repeat, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ja } from "date-fns/locale";
 
@@ -140,7 +140,7 @@ export default function CommentItem({
                     {submitting ? (
                       <Loader2 className="w-3 h-3 animate-spin mr-1" />
                     ) : (
-                      <Send className="w-3 h-3 mr-1" />
+                      <Repeat className="w-3 h-3 mr-1" />
                     )}
                     返信
                   </Button>

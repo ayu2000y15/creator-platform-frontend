@@ -43,7 +43,7 @@ import {
   X,
   Trash2,
   Edit,
-  Send,
+  Repeat,
   Reply,
   Loader2,
   ChevronDown,
@@ -275,7 +275,7 @@ export default function PostCard({
   const isCommentSpark = (post: Post) => {
     return (
       post.content_type === "quote" &&
-      post.text_content?.includes("さんのコメントをスパークしました")
+      post.text_content?.includes("さんのコメントを共有しました")
     );
   };
 
@@ -617,14 +617,14 @@ export default function PostCard({
       {((post.is_repost && post.repost_user) || isCommentSpark(post)) && (
         <div className="px-3 sm:px-4 pt-2 pb-1">
           <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
-            <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-yellow-500" />
+            <Repeat className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-yellow-500" />
             <span>
               <span className="font-medium">
                 {post.is_repost && post.repost_user
                   ? post.repost_user.name
                   : post.user.name}
               </span>
-              がスパークしました
+              が共有しました
             </span>
           </div>
         </div>
@@ -1115,7 +1115,7 @@ export default function PostCard({
                   }
                 }}
               >
-                <Zap
+                <Repeat
                   className={`w-3 h-3 sm:w-4 sm:h-4 ${
                     post.is_sparked ? "fill-current" : ""
                   }`}

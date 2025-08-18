@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Loader2,
   Sparkles,
+  Send,
   Users,
   Video,
   DollarSign,
@@ -487,7 +488,7 @@ export default function ShortVideoFeed({
                           </span>
                         </div>
                         <div className="flex items-center space-x-1">
-                          <Zap
+                          <Send
                             className={`w-3 h-3 drop-shadow ${
                               post.is_sparked
                                 ? "fill-yellow-500 text-yellow-500"

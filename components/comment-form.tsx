@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Loader2 } from "lucide-react";
+import { Repeat, Loader2 } from "lucide-react";
 
 interface CommentFormProps {
   currentUser: any;
@@ -55,7 +55,7 @@ export default function CommentForm({
               {submitting ? (
                 <Loader2 className="w-3 h-3 animate-spin mr-1" />
               ) : (
-                <Send className="w-3 h-3 mr-1" />
+                <Repeat className="w-3 h-3 mr-1" />
               )}
               投稿
             </Button>

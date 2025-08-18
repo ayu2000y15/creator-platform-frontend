@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Post } from "@/lib/post-api";
 import {
   Heart,
-  Zap,
+  Send,
   Bookmark,
   MessageCircle,
   Share2,
@@ -175,7 +175,7 @@ export default function ShortVideoCard({
               className="h-auto p-2 rounded-full text-white bg-black bg-opacity-50 hover:bg-gray-500 transition-all duration-200"
               onClick={() => onToggleAction(post.id, "spark")}
             >
-              <Zap
+              <Send
                 className={`w-6 h-6 transition-colors duration-200 ${
                   post.is_sparked
                     ? "fill-yellow-500 text-yellow-500"

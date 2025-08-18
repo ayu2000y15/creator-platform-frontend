@@ -16,10 +16,9 @@ import AppHeader from "@/components/app-header";
 import {
   ArrowLeft,
   Heart,
-  Zap,
   Bookmark,
   MessageCircle,
-  Send,
+  Repeat,
   Reply,
   Loader2,
   Play,
@@ -707,7 +706,7 @@ export default function PostDetailPage() {
       toast({
         title: wasSparked
           ? "スパークを取り消しました（デモモード）"
-          : "スパークしました（デモモード）",
+          : "共有しました（デモモード）",
         variant: "default",
       });
       return;
@@ -721,7 +720,7 @@ export default function PostDetailPage() {
       }
 
       toast({
-        title: wasSparked ? "スパークを取り消しました" : "スパークしました",
+        title: wasSparked ? "スパークを取り消しました" : "共有しました",
         variant: "default",
       });
     } catch (error) {
@@ -954,94 +953,20 @@ export default function PostDetailPage() {
               </p>
               <div className="flex items-center space-x-4 text-gray-500">
                 <button
-                  onClick={() =>
-                    setReplyingTo(showMyReplyForm ? null : comment.id)
-                  }
-                  className="flex items-center space-x-1 hover:text-blue-600 transition-colors p-1 rounded hover:bg-blue-50 text-sm"
-                >
-                  <Reply className="w-4 h-4" />
-                  <span>返信</span>
-                  {comment.replies && comment.replies.length > 0 && (
-                    <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
-                      {comment.replies.length}
-                    </span>
-                  )}
-                </button>
-                <button
                   onClick={() => handleCommentLike(comment.id)}
                   className={`flex items-center space-x-1 transition-colors p-1 rounded ${
                     isLiked ? "text-red-600" : "hover:text-red-600"
                   }`}
                 >
-                  <Heart
-                    className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`}
-                  />
+                  <Heart className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`} />
                   <span className="text-sm">{likesCount}</span>
-                </button>
-                <button
-                  onClick={() => handleCommentSpark(comment.id)}
-                  className={`flex items-center space-x-1 transition-colors p-1 rounded ${
-                    isSparked ? "text-yellow-600" : "hover:text-yellow-600"
-                  }`}
-                >
-                  <Zap
-                    className={`w-4 h-4 ${isSparked ? "fill-current" : ""}`}
-                  />
-                  <span className="text-sm">{sparksCount}</span>
-                </button>
-                <button
-                  onClick={() => handleCommentQuote(comment)}
-                  className="flex items-center space-x-1 hover:text-green-600 transition-colors p-1 rounded hover:bg-green-50 text-sm"
-                >
-                  <Share2 className="w-4 h-4" />
-                  <span className="text-sm">{comment.quotes_count || 0}</span>
                 </button>
               </div>
             </div>
           </div>
 
           {/* この親コメントへの返信入力フォーム */}
-          {showMyReplyForm && (
-            <div className="pl-12 pt-4 mt-2">
-              <div className="flex items-start space-x-3">
-                <Avatar className="w-8 h-8 flex-shrink-0">
-                  <AvatarImage src={demoUser?.profile_image || undefined} />
-                  <AvatarFallback className="text-sm">
-                    {demoUser?.name?.charAt(0) || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <Textarea
-                    placeholder={`${comment.user?.name || "user"} への返信...`}
-                    value={localReplyText}
-                    onChange={(e) => setLocalReplyText(e.target.value)}
-                    maxLength={100}
-                    rows={3}
-                    className="resize-none text-sm"
-                  />
-                  <div className="flex justify-end items-center mt-2 space-x-2">
-                    <span className="text-xs text-gray-500 flex-1">
-                      {localReplyText.length}/100
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setReplyingTo(null)}
-                    >
-                      キャンセル
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={handleReplySubmit}
-                      disabled={!localReplyText.trim() || submitting}
-                    >
-                      <Send className="w-3 h-3 mr-1.5" /> 返信
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* 返信フォームは非表示（コメント欄は「いいね」のみ） */}
 
           {/* 返信一覧 */}
           {comment.replies && comment.replies.length > 0 && (
@@ -1128,7 +1053,9 @@ export default function PostDetailPage() {
                   isSparked ? "text-yellow-600" : "hover:text-yellow-600"
                 }`}
               >
-                <Zap className={`w-3 h-3 ${isSparked ? "fill-current" : ""}`} />
+                <Repeat
+                  className={`w-3 h-3 ${isSparked ? "fill-current" : ""}`}
+                />
                 <span>{sparksCount}</span>
               </button>
               <button
@@ -1177,7 +1104,7 @@ export default function PostDetailPage() {
                     onClick={handleReplySubmit}
                     disabled={!localReplyText.trim() || submitting}
                   >
-                    <Send className="w-3 h-3 mr-1.5" /> 返信
+                    <Repeat className="w-3 h-3 mr-1.5" /> 返信
                   </Button>
                 </div>
               </div>
@@ -1539,7 +1466,7 @@ export default function PostDetailPage() {
                 onClick={() => handleToggleAction("spark")}
                 className="flex items-center space-x-2 text-gray-600 hover:text-yellow-600 transition-colors"
               >
-                <Zap
+                <Repeat
                   className={`w-5 h-5 ${
                     post.is_sparked ? "fill-yellow-500 text-yellow-500" : ""
                   }`}
@@ -1601,7 +1528,7 @@ export default function PostDetailPage() {
                   {submitting ? (
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                   ) : (
-                    <Send className="w-4 h-4 mr-2" />
+                    <Repeat className="w-4 h-4 mr-2" />
                   )}
                   投稿
                 </Button>

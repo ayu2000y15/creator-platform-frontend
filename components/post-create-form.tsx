@@ -16,7 +16,15 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { postApi, CreatePostData, Post } from "@/lib/post-api";
-import { ImageIcon, Video, FileText, Quote, Send, X, Play } from "lucide-react";
+import {
+  ImageIcon,
+  Video,
+  FileText,
+  Quote,
+  Repeat,
+  X,
+  Play,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ImageModal from "@/components/image-modal";
 import { useAuth } from "@/contexts/auth-context";
@@ -839,7 +847,7 @@ export default function PostCreateForm({
                 disabled={isSubmitting || isUploading}
                 className="flex items-center gap-2"
               >
-                <Send className="w-4 h-4" />
+                <Repeat className="w-4 h-4" />
                 {isSubmitting ? "投稿中..." : "投稿する"}
               </Button>
             </div>

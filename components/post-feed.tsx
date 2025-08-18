@@ -10,6 +10,7 @@ import {
   Loader2,
   RefreshCw,
   Sparkles,
+  Repeat,
   Users,
   Video,
   DollarSign,
@@ -219,7 +220,13 @@ export default function PostFeed() {
       const originalPostId = getOriginalPostId(post);
 
       // 元の投稿またはそのリポストの場合に更新
-      if (post.id === targetPostId || originalPostId === targetPostId) {
+      // ただし spark の場合は quoted_post.id を参照せず、投稿自身の id のみを対象とする
+      const matchesTarget =
+        actionType === "spark"
+          ? post.id === targetPostId
+          : post.id === targetPostId || originalPostId === targetPostId;
+
+      if (matchesTarget) {
         const updatedPost = { ...post };
 
         // アクション状態を更新
@@ -241,7 +248,12 @@ export default function PostFeed() {
         }
 
         // リポスト投稿の場合は quoted_post も更新
-        if (updatedPost.is_repost && updatedPost.quoted_post) {
+        // ただし spark の場合は quoted_post を更新しない（spark 処理内で quoted_post_id を使用しない）
+        if (
+          updatedPost.is_repost &&
+          updatedPost.quoted_post &&
+          actionType !== "spark"
+        ) {
           updatedPost.quoted_post = {
             ...updatedPost.quoted_post,
             is_liked:
@@ -296,7 +308,13 @@ export default function PostFeed() {
       const originalPostId = getOriginalPostId(post);
 
       // 元の投稿またはそのリポストの場合に更新
-      if (post.id === targetPostId || originalPostId === targetPostId) {
+      // ただし spark の場合は quoted_post.id を参照せず、投稿自身の id のみを対象とする
+      const matchesTarget =
+        actionType === "spark"
+          ? post.id === targetPostId
+          : post.id === targetPostId || originalPostId === targetPostId;
+
+      if (matchesTarget) {
         const updatedPost = { ...post };
 
         // 実際の状態に基づいて更新
@@ -312,7 +330,12 @@ export default function PostFeed() {
         }
 
         // リポスト投稿の場合は quoted_post も更新
-        if (updatedPost.is_repost && updatedPost.quoted_post) {
+        // ただし spark の場合は quoted_post を更新しない（spark 処理内で quoted_post_id を使用しない）
+        if (
+          updatedPost.is_repost &&
+          updatedPost.quoted_post &&
+          actionType !== "spark"
+        ) {
           updatedPost.quoted_post = {
             ...updatedPost.quoted_post,
             is_sparked:
@@ -369,8 +392,23 @@ export default function PostFeed() {
     // 元の投稿IDを取得
     const originalPostId = getOriginalPostId(targetPost);
 
+    // スパークは投稿自体（repost の id を含む）で API を叩くが、
+    // ローカルで生成した擬似リポストID（"repost_..."）はサーバーに存在しないため、
+    // その場合は元の投稿IDを API に渡す。
+    const apiTargetId =
+      actionType === "spark"
+        ? targetPost.is_repost &&
+          typeof targetPost.id === "string" &&
+          targetPost.id.startsWith("repost_")
+          ? originalPostId
+          : targetPost.id
+        : originalPostId;
+
+    // UI 更新は常に表示中の投稿の id（targetPost.id）を使う
+    const uiTargetId = targetPost.id;
+
     // 重複処理を防ぐためのキーを生成
-    const actionKey = `${originalPostId}_${actionType}`;
+    const actionKey = `${apiTargetId}_${actionType}`;
 
     // 既に処理中の場合はスキップ
     if (processingActions.has(actionKey)) {
@@ -381,11 +419,16 @@ export default function PostFeed() {
     setProcessingActions((prev) => new Set(prev).add(actionKey));
 
     try {
-      // 現在のアクション状態を正しく取得（リポスト投稿の場合は quoted_post から取得）
+      // 現在のアクション状態を正しく取得
+      // - spark の場合はリポスト（表示されている投稿）自身の is_sparked を参照する
+      // - like/bookmark は従来どおり quoted_post（元投稿）を参照
       const postToCheck =
-        targetPost.is_repost && targetPost.quoted_post
+        actionType === "spark"
+          ? targetPost
+          : targetPost.is_repost && targetPost.quoted_post
           ? targetPost.quoted_post
           : targetPost;
+
       const isCurrentlyActive =
         actionType === "like"
           ? !!postToCheck.is_liked
@@ -458,7 +501,8 @@ export default function PostFeed() {
         }
       } else if (actionType === "spark") {
         if (isCurrentlyActive) {
-          const response = await postApi.unsparkPost(originalPostId);
+          // スパーク解除は投稿の id（repost の id を含む）で行う
+          const response = await postApi.unsparkPost(apiTargetId);
 
           // まず元の投稿のスパーク状態を更新
           let updatedPosts = posts;
@@ -473,10 +517,10 @@ export default function PostFeed() {
             const actualIsSparkState = response.is_sparked;
             const actualSparksCount = response.sparks_count || 0;
 
-            // 実際の状態に基づいて更新
+            // 実際の状態に基づいて更新（UI 上の投稿 id を使用）
             updatedPosts = updatePostsWithActualState(
               posts,
-              originalPostId,
+              uiTargetId,
               "spark",
               actualIsSparkState,
               actualSparksCount
@@ -484,15 +528,12 @@ export default function PostFeed() {
           }
 
           // スパーク解除時：自分のリポスト表示を削除
-          updatedPosts = updatedPosts.filter(
-            (p) =>
-              !(
-                p.is_repost &&
-                p.repost_user?.id === user?.id &&
-                (p.id === originalPostId ||
-                  (p.quoted_post && p.quoted_post.id === originalPostId))
-              )
-          );
+          // 表示中の投稿（uiTargetId）に対応する自分のリポスト表示のみ削除する
+          updatedPosts = updatedPosts.filter((p) => {
+            const isUserRepost = p.is_repost && p.repost_user?.id === user?.id;
+            const matchesUiTarget = p.id === uiTargetId;
+            return !(isUserRepost && matchesUiTarget);
+          });
 
           // 最終的な状態を設定
           setPosts(updatedPosts);
@@ -505,7 +546,8 @@ export default function PostFeed() {
             },
           }));
         } else {
-          const response = await postApi.sparkPost(originalPostId);
+          // スパークは投稿の id（repost の id を含む）で行う
+          const response = await postApi.sparkPost(apiTargetId);
 
           // まず元の投稿のスパーク状態を更新
           let updatedPosts = posts;
@@ -519,10 +561,10 @@ export default function PostFeed() {
             const actualIsSparkState = response.is_sparked;
             const actualSparksCount = response.sparks_count || 0;
 
-            // 実際の状態に基づいて更新
+            // 実際の状態に基づいて更新（UI 上の投稿 id を使用）
             updatedPosts = updatePostsWithActualState(
               posts,
-              originalPostId,
+              uiTargetId,
               "spark",
               actualIsSparkState,
               actualSparksCount
@@ -536,7 +578,15 @@ export default function PostFeed() {
           );
           if (originalPost && user) {
             // リポスト表示用の投稿を作成
-            const repostEntry: Post = {
+            // 注意: ローカルで生成した擬似IDをそのまま post.id に使うと API 呼び出しで 404 になるため
+            // repost の表示は元の投稿の id を使い、UI の重複区別には local_repost_key を使う
+            const localRepostKey = `local_repost_${originalPostId}_${
+              user.id
+            }_${Date.now()}`;
+            const repostEntry: Post & {
+              local_repost_key?: string;
+              _isLocalRepost?: boolean;
+            } = {
               ...originalPost,
               is_repost: true,
               repost_user: {
@@ -546,9 +596,12 @@ export default function PostFeed() {
                 profile_image: user.profile_image || undefined,
               },
               repost_created_at: new Date().toISOString(),
-              // リポスト表示用の一意IDを生成
-              id: `repost_${originalPostId}_${user.id}_${Date.now()}`,
-            };
+              // id は元の投稿の id を使う（サーバーに存在する id）
+              id: originalPostId,
+              // UI 用のローカルキーを追加
+              local_repost_key: localRepostKey,
+              _isLocalRepost: true,
+            } as Post;
 
             updatedPosts = [repostEntry, ...updatedPosts];
           }
@@ -786,15 +839,20 @@ export default function PostFeed() {
                 }に該当する投稿がありません`}
           </div>
         ) : (
-          posts.map((post, index) => (
-            <PostCard
-              key={`${activeTab}-${post.id}-${index}`}
-              post={post}
-              onQuote={handleQuote}
-              onToggleAction={handleToggleAction}
-              onDelete={handleDeletePost}
-            />
-          ))
+          posts.map((post, index) => {
+            const localKey = (post as any).local_repost_key
+              ? `${activeTab}-${(post as any).local_repost_key}-${index}`
+              : `${activeTab}-${post.id}-${index}`;
+            return (
+              <PostCard
+                key={localKey}
+                post={post}
+                onQuote={handleQuote}
+                onToggleAction={handleToggleAction}
+                onDelete={handleDeletePost}
+              />
+            );
+          })
         )}
       </div>
 
