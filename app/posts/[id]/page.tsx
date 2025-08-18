@@ -706,7 +706,7 @@ export default function PostDetailPage() {
       toast({
         title: wasSparked
           ? "スパークを取り消しました（デモモード）"
-          : "スパークしました（デモモード）",
+          : "共有しました（デモモード）",
         variant: "default",
       });
       return;
@@ -720,7 +720,7 @@ export default function PostDetailPage() {
       }
 
       toast({
-        title: wasSparked ? "スパークを取り消しました" : "スパークしました",
+        title: wasSparked ? "スパークを取り消しました" : "共有しました",
         variant: "default",
       });
     } catch (error) {

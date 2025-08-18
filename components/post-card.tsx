@@ -275,7 +275,7 @@ export default function PostCard({
   const isCommentSpark = (post: Post) => {
     return (
       post.content_type === "quote" &&
-      post.text_content?.includes("さんのコメントをスパークしました")
+      post.text_content?.includes("さんのコメントを共有しました")
     );
   };
 
@@ -624,7 +624,7 @@ export default function PostCard({
                   ? post.repost_user.name
                   : post.user.name}
               </span>
-              がスパークしました
+              が共有しました
             </span>
           </div>
         </div>
