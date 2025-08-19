@@ -81,11 +81,6 @@ export default function AppHeader({
       icon: FileText,
       label: "タイムライン",
     },
-    {
-      href: user?.id ? `/profile/${user.id}` : "/profile",
-      icon: User,
-      label: "プロフィール",
-    },
   ];
 
   return (
@@ -165,7 +160,7 @@ export default function AppHeader({
                         }}
                       >
                         <User className="h-5 w-5 mr-3" />
-                        プロフィール
+                        アカウント情報
                       </Button>
                       <Button
                         variant="ghost"
@@ -244,8 +239,8 @@ export default function AppHeader({
             ) : user ? (
               <>
                 {/* ユーザープロフィール */}
-                <button
-                  onClick={handleProfileClick}
+                <Link
+                  href={`/profile/${user.id}`}
                   className="flex items-center gap-2 hover:bg-slate-100 rounded-lg p-2 transition-colors"
                 >
                   <Avatar className="h-8 w-8">
@@ -262,13 +257,15 @@ export default function AppHeader({
                       <div className="text-xs text-orange-600">未認証</div>
                     )}
                   </div>
-                </button>
+                </Link>
 
                 {/* アクションボタン */}
-                <Button variant="ghost" size="sm" onClick={handleProfileClick}>
-                  <User className="h-4 w-4" />
-                  <span className="sr-only">プロフィール</span>
-                </Button>
+                <Link href="/profile">
+                  <Button variant="ghost" size="sm">
+                    <User className="h-4 w-4" />
+                    <span className="sr-only">アカウント情報</span>
+                  </Button>
+                </Link>
                 <Button variant="ghost" size="sm">
                   <Settings className="h-4 w-4" />
                   <span className="sr-only">設定</span>
@@ -295,15 +292,15 @@ export default function AppHeader({
           {/* 右側 - シンプルなユーザーアバター（モバイルのみ） */}
           {user && (
             <div className="ml-auto md:hidden">
-              <button
-                onClick={handleProfileClick}
+              <Link
+                href={`/profile/${user.id}`}
                 className="flex items-center hover:opacity-80 transition-opacity"
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user.profile_image || undefined} />
                   <AvatarFallback>{userInitials}</AvatarFallback>
                 </Avatar>
-              </button>
+              </Link>
             </div>
           )}
 

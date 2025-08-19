@@ -45,6 +45,8 @@ export default function ShortVideoFeed({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenIndex, setFullscreenIndex] = useState(0);
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef<number | null>(null);
+  const touchEndY = useRef<number | null>(null);
 
   // タブ情報の定義
   const tabs = [
@@ -191,11 +193,43 @@ export default function ShortVideoFeed({
 
     const container = fullscreenContainerRef.current;
     if (container) {
+      const onTouchStart = (e: TouchEvent) => {
+        touchStartY.current = e.touches[0].clientY;
+      };
+
+      const onTouchMove = (e: TouchEvent) => {
+        touchEndY.current = e.touches[0].clientY;
+      };
+
+      const onTouchEnd = () => {
+        if (touchStartY.current == null || touchEndY.current == null) return;
+        const delta = touchStartY.current - touchEndY.current;
+        const threshold = 50; // px
+        if (Math.abs(delta) > threshold) {
+          if (delta > 0) {
+            // swipe up -> next
+            if (fullscreenIndex < posts.length - 1) setFullscreenIndex((i) => i + 1);
+            else if (hasMore && !loading) loadPosts(nextCursor);
+          } else {
+            // swipe down -> prev
+            if (fullscreenIndex > 0) setFullscreenIndex((i) => i - 1);
+          }
+        }
+        touchStartY.current = null;
+        touchEndY.current = null;
+      };
+
       container.addEventListener("wheel", handleScroll, { passive: false });
+      container.addEventListener("touchstart", onTouchStart, { passive: true });
+      container.addEventListener("touchmove", onTouchMove, { passive: true });
+      container.addEventListener("touchend", onTouchEnd);
       window.addEventListener("keydown", handleKeyDown);
 
       return () => {
-        container.removeEventListener("wheel", handleScroll);
+  container.removeEventListener("wheel", handleScroll);
+  container.removeEventListener("touchstart", onTouchStart as any);
+  container.removeEventListener("touchmove", onTouchMove as any);
+  container.removeEventListener("touchend", onTouchEnd as any);
         window.removeEventListener("keydown", handleKeyDown);
       };
     }
@@ -566,6 +600,7 @@ export default function ShortVideoFeed({
               <ShortVideoCard
                 post={posts[fullscreenIndex]}
                 isActive={true}
+                isFullscreen={true}
                 onToggleAction={handleToggleAction}
               />
             )}
@@ -582,10 +617,7 @@ export default function ShortVideoFeed({
             )}
 
             {/* ナビゲーションヒント */}
-            <div className="absolute top-4 left-4 text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded-full">
-              {fullscreenIndex + 1} / {posts.length}
-              {hasMore && " (+)"}
-            </div>
+            {/* index display removed as per UI requirement */}
 
             {/* 操作ヒント */}
             <div className="absolute top-4 left-1/2 transform -translate-x-1/2 text-white text-xs bg-black bg-opacity-50 px-3 py-1 rounded-full">

@@ -91,7 +91,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <AppHeader title="プロフィール" />
+      <AppHeader title="アカウント情報" />
 
       {/* メインコンテンツ */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -106,18 +106,18 @@ export default function ProfilePage() {
                     {userInitials}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-2xl mb-1">
+                <div className="flex-1 relative">
+                  <div className="flex flex-col sm:flex-row sm:items-center items-start justify-between">
+                    <div className="min-w-0">
+                      <CardTitle className="text-2xl mb-1 truncate">
                         {user.name}
                       </CardTitle>
                       {user.username && (
-                        <p className="text-slate-500 text-sm mb-2">
+                        <p className="text-slate-500 text-sm mb-2 truncate">
                           @{user.username}
                         </p>
                       )}
-                      <CardDescription className="text-base mb-3">
+                      <CardDescription className="text-base mb-3 truncate">
                         {user.email}
                       </CardDescription>
                       {user.bio && (
@@ -126,9 +126,12 @@ export default function ProfilePage() {
                         </p>
                       )}
                     </div>
-                    <Button onClick={handleEditProfile}>
+                  </div>
+                  {/* 編集ボタンを常に右上に表示（PC/モバイル共通） */}
+                  <div className="absolute right-4 top-3 sm:top-4">
+                    <Button onClick={handleEditProfile} className="whitespace-nowrap">
                       <Edit className="h-4 w-4 mr-2" />
-                      編集
+                      <span className="hidden sm:inline">編集</span>
                     </Button>
                   </div>
                   <div className="flex items-center gap-2">

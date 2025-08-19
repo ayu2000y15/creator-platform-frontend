@@ -21,6 +21,7 @@ import { ja } from "date-fns/locale";
 interface ShortVideoCardProps {
   post: Post;
   isActive: boolean;
+  isFullscreen?: boolean;
   onToggleAction: (
     postId: string,
     actionType: "like" | "spark" | "bookmark"
@@ -30,6 +31,7 @@ interface ShortVideoCardProps {
 export default function ShortVideoCard({
   post,
   isActive,
+  isFullscreen = false,
   onToggleAction,
 }: ShortVideoCardProps) {
   const router = useRouter();
@@ -119,7 +121,7 @@ export default function ShortVideoCard({
         <Button
           variant="ghost"
           size="sm"
-          className="absolute top-4 right-4 text-white bg-black bg-opacity-50 hover:bg-opacity-70"
+          className="absolute top-4 left-4 text-white bg-black bg-opacity-50 hover:bg-opacity-70"
           onClick={toggleMute}
         >
           {isMuted ? (
