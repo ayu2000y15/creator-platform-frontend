@@ -16,15 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { postApi, CreatePostData, Post } from "@/lib/post-api";
-import {
-  ImageIcon,
-  Video,
-  FileText,
-  Quote,
-  Repeat,
-  X,
-  Play,
-} from "lucide-react";
+import { ImageIcon, Video, FileText, Quote, Send, X, Play } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ImageModal from "@/components/image-modal";
 import { useAuth } from "@/contexts/auth-context";
@@ -46,6 +38,7 @@ export default function PostCreateForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<Partial<CreatePostData>>({
     content_type: quotedPost ? "quote" : "text",
     text_content: "",
@@ -112,11 +105,13 @@ export default function PostCreateForm({
           formData.content_type === "quote") &&
         files.length > 4
       ) {
+        const msg = "テキスト・引用投稿では画像は最大4枚までです";
         toast({
           title: "エラー",
-          description: "テキスト・引用投稿では画像は最大4枚までです",
+          description: msg,
           variant: "destructive",
         });
+        setErrors((prev) => ({ ...prev, media: msg }));
         setIsUploading(false);
         return;
       }
@@ -126,11 +121,13 @@ export default function PostCreateForm({
           formData.content_type === "short_video") &&
         files.length > 1
       ) {
+        const msg = "動画投稿では1つの動画ファイルのみ選択できます";
         toast({
           title: "エラー",
-          description: "動画投稿では1つの動画ファイルのみ選択できます",
+          description: msg,
           variant: "destructive",
         });
+        setErrors((prev) => ({ ...prev, media: msg }));
         setIsUploading(false);
         return;
       }
@@ -143,21 +140,25 @@ export default function PostCreateForm({
 
       for (const file of files) {
         if (isTextPost && !file.type.startsWith("image/")) {
+          const msg = "テキスト投稿では画像ファイルのみ選択できます";
           toast({
             title: "エラー",
-            description: "テキスト投稿では画像ファイルのみ選択できます",
+            description: msg,
             variant: "destructive",
           });
+          setErrors((prev) => ({ ...prev, media: msg }));
           setIsUploading(false);
           return;
         }
 
         if (isVideoPost && !file.type.startsWith("video/")) {
+          const msg = "動画投稿では動画ファイルのみ選択できます";
           toast({
             title: "エラー",
-            description: "動画投稿では動画ファイルのみ選択できます",
+            description: msg,
             variant: "destructive",
           });
+          setErrors((prev) => ({ ...prev, media: msg }));
           setIsUploading(false);
           return;
         }
@@ -170,12 +171,14 @@ export default function PostCreateForm({
           // ファイルサイズから概算時間をチェック（簡易的）
           const maxSize = 50 * 1024 * 1024; // 50MB程度を1分の目安とする
           if (file.size > maxSize) {
+            const msg =
+              "ファイルサイズが大きすぎます。1分以内の動画をアップロードしてください";
             toast({
               title: "警告",
-              description:
-                "ファイルサイズが大きすぎます。1分以内の動画をアップロードしてください",
+              description: msg,
               variant: "destructive",
             });
+            setErrors((prev) => ({ ...prev, media: msg }));
             setIsUploading(false);
             return;
           }
@@ -188,12 +191,14 @@ export default function PostCreateForm({
         ) {
           const maxSize = 2 * 1024 * 1024 * 1024; // 2GB程度を1時間の目安とする
           if (file.size > maxSize) {
+            const msg =
+              "ファイルサイズが大きすぎます。1時間以内の動画をアップロードしてください";
             toast({
               title: "警告",
-              description:
-                "ファイルサイズが大きすぎます。1時間以内の動画をアップロードしてください",
+              description: msg,
               variant: "destructive",
             });
+            setErrors((prev) => ({ ...prev, media: msg }));
             setIsUploading(false);
             return;
           }
@@ -201,6 +206,12 @@ export default function PostCreateForm({
       }
 
       setSelectedFiles(files);
+      // clear previous media errors when files successfully selected
+      setErrors((prev) => {
+        const copy = { ...prev };
+        delete copy.media;
+        return copy;
+      });
 
       // プレビュー生成
       const newPreviews: string[] = [];
@@ -242,18 +253,23 @@ export default function PostCreateForm({
       return;
     }
 
+    // clear previous errors
+    setErrors({});
+
     // バリデーション
     const contentType = formData.content_type;
     const hasText = formData.text_content?.trim();
     const hasFiles = selectedFiles.length > 0;
 
-    // テキスト投稿の場合：テキスト必須
-    if (contentType === "text" && !hasText) {
+    // テキスト投稿・引用投稿の場合：テキスト必須
+    if ((contentType === "text" || contentType === "quote") && !hasText) {
+      const msg = "投稿内容の入力が必須です";
       toast({
         title: "エラー",
-        description: "テキスト投稿では投稿内容の入力が必須です",
+        description: msg,
         variant: "destructive",
       });
+      setErrors((prev) => ({ ...prev, text_content: msg }));
       return;
     }
 
@@ -262,40 +278,48 @@ export default function PostCreateForm({
       (contentType === "video" || contentType === "short_video") &&
       !hasFiles
     ) {
+      const msg = "動画投稿では動画ファイルが必須です";
       toast({
         title: "エラー",
-        description: "動画投稿では動画ファイルが必須です",
+        description: msg,
         variant: "destructive",
       });
+      setErrors((prev) => ({ ...prev, media: msg }));
       return;
     }
 
     // ショート動画の場合：テキストがあってはいけない
     if (contentType === "short_video" && hasText) {
+      const msg = "ショート動画ではテキストを入力できません";
       toast({
         title: "エラー",
-        description: "ショート動画ではテキストを入力できません",
+        description: msg,
         variant: "destructive",
       });
+      setErrors((prev) => ({ ...prev, text_content: msg }));
       return;
     }
 
     // 引用投稿でない場合の基本チェック
     if (!quotedPost && !hasText && !hasFiles) {
+      const msg = "投稿内容を入力してください";
       toast({
         title: "エラー",
-        description: "投稿内容を入力してください",
+        description: msg,
         variant: "destructive",
       });
+      setErrors((prev) => ({ ...prev, general: msg }));
       return;
     }
 
     if (formData.is_paid && (!formData.price || formData.price <= 0)) {
+      const msg = "有料投稿の場合は価格を設定してください";
       toast({
         title: "エラー",
-        description: "有料投稿の場合は価格を設定してください",
+        description: msg,
         variant: "destructive",
       });
+      setErrors((prev) => ({ ...prev, price: msg }));
       return;
     }
 
@@ -391,6 +415,7 @@ export default function PostCreateForm({
         description: errorMessage,
         variant: "destructive",
       });
+      setErrors((prev) => ({ ...prev, general: errorMessage }));
     } finally {
       setIsSubmitting(false);
     }
@@ -437,6 +462,11 @@ export default function PostCreateForm({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {errors.general && (
+              <div className="text-sm text-red-600 bg-red-50 border border-red-100 p-2 rounded">
+                {errors.general}
+              </div>
+            )}
             {/* 投稿種別選択 */}
             {!quotedPost && (
               <div className="space-y-2">
@@ -530,7 +560,8 @@ export default function PostCreateForm({
               <div className="space-y-2">
                 <Label>
                   投稿内容
-                  {formData.content_type === "text" && (
+                  {(formData.content_type === "text" ||
+                    formData.content_type === "quote") && (
                     <span className="text-red-500 ml-1">*必須</span>
                   )}
                   {formData.content_type === "video" && (
@@ -551,6 +582,11 @@ export default function PostCreateForm({
                   maxLength={1000}
                   required={formData.content_type === "text"}
                 />
+                {errors.text_content && (
+                  <div className="text-xs text-red-600">
+                    {errors.text_content}
+                  </div>
+                )}
                 <div className="text-xs text-gray-500 text-right">
                   {formData.text_content?.length || 0}/1000
                 </div>
@@ -603,6 +639,11 @@ export default function PostCreateForm({
                   </div>
                 )}
               </div>
+
+              {/* エラーメッセージ（メディア） */}
+              {errors.media && (
+                <div className="text-xs text-red-600 mt-1">{errors.media}</div>
+              )}
 
               {/* ファイル制限の注意書き */}
               <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
@@ -734,44 +775,45 @@ export default function PostCreateForm({
               )}
             </div>
 
-            {/* 閲覧権限 */}
-            <div className="space-y-2">
-              <Label>閲覧権限</Label>
-              <Select
-                value={formData.view_permission}
-                onValueChange={(value) =>
-                  handleInputChange("view_permission", value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="public">全員</SelectItem>
-                  <SelectItem value="followers">フォロワーのみ</SelectItem>
-                  <SelectItem value="mutuals">相互フォローのみ</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* 閲覧権限とコメント権限（横並び） */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>閲覧権限</Label>
+                <Select
+                  value={formData.view_permission}
+                  onValueChange={(value) =>
+                    handleInputChange("view_permission", value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="public">全員</SelectItem>
+                    <SelectItem value="followers">フォロワーのみ</SelectItem>
+                    <SelectItem value="mutuals">相互フォローのみ</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {/* コメント権限 */}
-            <div className="space-y-2">
-              <Label>コメント権限</Label>
-              <Select
-                value={formData.comment_permission}
-                onValueChange={(value) =>
-                  handleInputChange("comment_permission", value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="public">全員</SelectItem>
-                  <SelectItem value="followers">フォロワーのみ</SelectItem>
-                  <SelectItem value="mutuals">相互フォローのみ</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                <Label>コメント権限</Label>
+                <Select
+                  value={formData.comment_permission}
+                  onValueChange={(value) =>
+                    handleInputChange("comment_permission", value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="public">全員</SelectItem>
+                    <SelectItem value="followers">フォロワーのみ</SelectItem>
+                    <SelectItem value="mutuals">相互フォローのみ</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* センシティブコンテンツ */}
@@ -815,6 +857,11 @@ export default function PostCreateForm({
                       }
                       placeholder="100"
                     />
+                    {errors.price && (
+                      <div className="text-xs text-red-600 mt-1">
+                        {errors.price}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <Label>紹介文</Label>
@@ -847,7 +894,7 @@ export default function PostCreateForm({
                 disabled={isSubmitting || isUploading}
                 className="flex items-center gap-2"
               >
-                <Repeat className="w-4 h-4" />
+                <Send className="w-4 h-4" />
                 {isSubmitting ? "投稿中..." : "投稿する"}
               </Button>
             </div>

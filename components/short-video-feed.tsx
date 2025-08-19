@@ -50,7 +50,7 @@ export default function ShortVideoFeed({
   const tabs = [
     {
       key: "recommend" as const,
-      label: "おすすめ",
+      label: "全体",
       icon: Sparkles,
     },
     {

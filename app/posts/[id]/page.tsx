@@ -18,6 +18,7 @@ import {
   Heart,
   Bookmark,
   MessageCircle,
+  Send,
   Repeat,
   Reply,
   Loader2,
@@ -952,7 +953,6 @@ export default function PostDetailPage() {
                 {comment.content}
               </p>
               <div className="flex items-center space-x-4 text-gray-500">
-                {/* 返信ボタン（表示しないが将来のために残す）
                 <button
                   onClick={() =>
                     setReplyingTo(showMyReplyForm ? null : comment.id)
@@ -967,7 +967,6 @@ export default function PostDetailPage() {
                     </span>
                   )}
                 </button>
-                */}
 
                 <button
                   onClick={() => handleCommentLike(comment.id)}
@@ -1009,7 +1008,6 @@ export default function PostDetailPage() {
           </div>
 
           {/* この親コメントへの返信入力フォーム */}
-          {/* 返信フォームは非表示（コメント欄は「いいね」のみ）
           {showMyReplyForm && (
             <div className="pl-12 pt-4 mt-2">
               <div className="flex items-start space-x-3">
@@ -1044,14 +1042,13 @@ export default function PostDetailPage() {
                       onClick={handleReplySubmit}
                       disabled={!localReplyText.trim() || submitting}
                     >
-                      <Repeat className="w-3 h-3 mr-1.5" /> 返信
+                      <Reply className="w-3 h-3 mr-1.5" /> 返信
                     </Button>
                   </div>
                 </div>
               </div>
             </div>
           )}
-          */}
 
           {/* 返信一覧 */}
           {comment.replies && comment.replies.length > 0 && (
@@ -1132,6 +1129,7 @@ export default function PostDetailPage() {
                 <Heart className={`w-3 h-3 ${isLiked ? "fill-current" : ""}`} />
                 <span>{likesCount}</span>
               </button>
+              {/* スパークボタン（非表示）
               <button
                 onClick={() => handleCommentSpark(comment.id)}
                 className={`flex items-center space-x-1 transition-colors p-1 rounded text-xs ${
@@ -1143,6 +1141,8 @@ export default function PostDetailPage() {
                 />
                 <span>{sparksCount}</span>
               </button>
+              */}
+              {/* 引用ボタン（非表示）
               <button
                 onClick={() => handleCommentQuote(comment)}
                 className="flex items-center space-x-1 hover:text-green-600 transition-colors p-1 rounded hover:bg-green-50 text-xs"
@@ -1150,6 +1150,7 @@ export default function PostDetailPage() {
                 <Share2 className="w-3 h-3" />
                 <span>{comment.quotes_count || 0}</span>
               </button>
+              */}
             </div>
           </div>
         </div>
@@ -1189,7 +1190,7 @@ export default function PostDetailPage() {
                     onClick={handleReplySubmit}
                     disabled={!localReplyText.trim() || submitting}
                   >
-                    <Repeat className="w-3 h-3 mr-1.5" /> 返信
+                    <Reply className="w-3 h-3 mr-1.5" /> 返信
                   </Button>
                 </div>
               </div>
@@ -1332,10 +1333,10 @@ export default function PostDetailPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleEdit()}>
+                  {/* <DropdownMenuItem onClick={() => handleEdit()}>
                     <Edit className="w-4 h-4 mr-2" />
                     編集
-                  </DropdownMenuItem>
+                  </DropdownMenuItem> */}
                   <DropdownMenuItem
                     onClick={() => handleDelete()}
                     className="text-red-600 focus:text-red-600"
@@ -1613,9 +1614,9 @@ export default function PostDetailPage() {
                   {submitting ? (
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                   ) : (
-                    <Repeat className="w-4 h-4 mr-2" />
+                    <Send className="w-4 h-4 mr-2" />
                   )}
-                  投稿
+                  送信
                 </Button>
               </div>
             </div>

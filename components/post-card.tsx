@@ -610,7 +610,7 @@ export default function PostCard({
 
   return (
     <Card
-      className="mb-4 cursor-pointer hover:bg-gray-50 transition-colors"
+      className="mb-4 cursor-pointer hover:bg-gray-50 transition-colors max-w-full overflow-hidden"
       onClick={handlePostClick}
     >
       {/* リポスト表示（コメントスパークも含む） */}
@@ -716,7 +716,7 @@ export default function PostCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem
+                {/* <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
                     handleEdit();
@@ -724,7 +724,7 @@ export default function PostCard({
                 >
                   <Edit className="w-4 h-4 mr-2" />
                   編集
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
@@ -785,17 +785,17 @@ export default function PostCard({
 
               {/* メディアの表示 */}
               {post.media && post.media.length > 0 && (
-                <div className="mt-3">
+                <div className="mt-3 max-w-full overflow-hidden">
                   {/* 動画の場合は全幅表示、画像の場合はグリッド表示 */}
                   {post.content_type === "video" ||
                   post.content_type === "short_video" ? (
                     // 動画投稿の場合
-                    <div className="w-full">
+                    <div className="w-full max-w-full">
                       {post.media
                         .filter((media) => media.file_type.startsWith("video/"))
                         .slice(0, 1)
                         .map((media) => (
-                          <div key={media.id}>
+                          <div key={media.id} className="max-w-full">
                             {renderVideoPreview(
                               media,
                               post.content_type === "short_video"
@@ -805,11 +805,11 @@ export default function PostCard({
                     </div>
                   ) : (
                     // テキスト投稿の画像の場合
-                    <div className="grid gap-1 sm:gap-2 grid-cols-2">
+                    <div className="grid gap-1 sm:gap-2 grid-cols-2 max-w-full">
                       {post.media.slice(0, 4).map((media) => (
                         <div
                           key={media.id}
-                          className="relative aspect-video rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-90 transition-opacity"
+                          className="relative aspect-video rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-90 transition-opacity min-w-0"
                           onClick={(e) => {
                             e.stopPropagation();
                             if (
@@ -909,20 +909,20 @@ export default function PostCard({
                 {post.quoted_post.media &&
                   post.quoted_post.media.length > 0 && (
                     <div
-                      className="mt-2 media-container"
+                      className="mt-2 media-container max-w-full overflow-hidden"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {/* 引用投稿でも動画の場合は全幅表示 */}
                       {post.quoted_post.content_type === "video" ||
                       post.quoted_post.content_type === "short_video" ? (
-                        <div className="w-full">
+                        <div className="w-full max-w-full">
                           {post.quoted_post.media
                             .filter((media) =>
                               media.file_type.startsWith("video/")
                             )
                             .slice(0, 1)
                             .map((media) => (
-                              <div key={media.id}>
+                              <div key={media.id} className="max-w-full">
                                 {renderVideoPreview(
                                   media,
                                   post.quoted_post?.content_type ===
@@ -932,11 +932,11 @@ export default function PostCard({
                             ))}
                         </div>
                       ) : (
-                        <div className="grid gap-1 sm:gap-2 grid-cols-2">
+                        <div className="grid gap-1 sm:gap-2 grid-cols-2 max-w-full">
                           {post.quoted_post.media.slice(0, 4).map((media) => (
                             <div
                               key={media.id}
-                              className="relative aspect-video rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-90 transition-opacity"
+                              className="relative aspect-video rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-90 transition-opacity min-w-0"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (
@@ -1075,126 +1075,247 @@ export default function PostCard({
               </div>
             )}
           <Separator className="my-2 sm:my-3" />
-          <div className="flex items-center justify-between interactive-element">
-            <div className="flex items-center space-x-3 sm:space-x-6">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`h-auto p-1 ${
-                  post.is_liked
-                    ? "text-red-500 hover:text-red-600"
-                    : "text-muted-foreground hover:text-red-500"
-                }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (requireAuth("like")) {
-                    onToggleAction(post.id, "like");
-                  }
-                }}
-              >
-                <Heart
-                  className={`w-3 h-3 sm:w-4 sm:h-4 ${
-                    post.is_liked ? "fill-current" : ""
+          {/* モバイル用のコンパクトなアクションバー */}
+          <div className="block sm:hidden">
+            <div className="flex items-center justify-between interactive-element">
+              <div className="flex items-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-auto p-2 ${
+                    post.is_liked
+                      ? "text-red-500 hover:text-red-600"
+                      : "text-muted-foreground hover:text-red-500"
                   }`}
-                />
-                <span className="ml-1 text-xs">{post.likes_count}</span>
-              </Button>
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (requireAuth("like")) {
+                      onToggleAction(post.id, "like");
+                    }
+                  }}
+                >
+                  <Heart
+                    className={`w-4 h-4 ${post.is_liked ? "fill-current" : ""}`}
+                  />
+                  <span className="ml-1 text-xs">{post.likes_count}</span>
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-auto p-2 ${
+                    post.is_sparked
+                      ? "text-yellow-500 hover:text-yellow-600"
+                      : "text-muted-foreground hover:text-yellow-500"
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (requireAuth("spark")) {
+                      onToggleAction(post.id, "spark");
+                    }
+                  }}
+                >
+                  <Repeat
+                    className={`w-4 h-4 ${
+                      post.is_sparked ? "fill-current" : ""
+                    }`}
+                  />
+                  <span className="ml-1 text-xs">{post.sparks_count}</span>
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-auto p-2 transition-colors ${
+                    showComments
+                      ? "text-blue-500 hover:text-blue-600"
+                      : "text-muted-foreground hover:text-blue-500"
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (requireAuth("comment")) {
+                      handleToggleComments();
+                    }
+                  }}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span className="ml-1 text-xs">{post.replies_count}</span>
+                  {/*{showComments ? (
+                    <ChevronUp className="w-3 h-3 ml-1" />
+                  ) : (
+                    <ChevronDown className="w-3 h-3 ml-1" />
+                  )} */}
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto p-2 text-muted-foreground hover:text-green-500"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (requireAuth("quote")) {
+                      onQuote?.(post);
+                    }
+                  }}
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span className="ml-1 text-xs">{post.quotes_count}</span>
+                </Button>
+              </div>
+
+              <div className="flex items-center space-x-1">
+                <div className="flex items-center text-muted-foreground">
+                  <Eye className="w-4 h-4" />
+                  <span className="ml-1 text-xs">{post.views_count || 0}</span>
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-auto p-2 ${
+                    post.is_bookmarked
+                      ? "text-blue-500 hover:text-blue-600"
+                      : "text-muted-foreground hover:text-blue-500"
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (requireAuth("bookmark")) {
+                      onToggleAction(post.id, "bookmark");
+                    }
+                  }}
+                >
+                  <Bookmark
+                    className={`w-4 h-4 ${
+                      post.is_bookmarked ? "fill-current" : ""
+                    }`}
+                  />
+                </Button>
+              </div>
+            </div>
+          </div>
+          {/* デスクトップ用のアクションバー */}
+          <div className="hidden sm:block">
+            <div className="flex items-center justify-between interactive-element">
+              <div className="flex items-center space-x-3 sm:space-x-6">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-auto p-1 ${
+                    post.is_liked
+                      ? "text-red-500 hover:text-red-600"
+                      : "text-muted-foreground hover:text-red-500"
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (requireAuth("like")) {
+                      onToggleAction(post.id, "like");
+                    }
+                  }}
+                >
+                  <Heart
+                    className={`w-3 h-3 sm:w-4 sm:h-4 ${
+                      post.is_liked ? "fill-current" : ""
+                    }`}
+                  />
+                  <span className="ml-1 text-xs">{post.likes_count}</span>
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-auto p-1 ${
+                    post.is_sparked
+                      ? "text-yellow-500 hover:text-yellow-600"
+                      : "text-muted-foreground hover:text-yellow-500"
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (requireAuth("spark")) {
+                      onToggleAction(post.id, "spark");
+                    }
+                  }}
+                >
+                  <Repeat
+                    className={`w-3 h-3 sm:w-4 sm:h-4 ${
+                      post.is_sparked ? "fill-current" : ""
+                    }`}
+                  />
+                  <span className="ml-1 text-xs">{post.sparks_count}</span>
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-auto p-1 transition-colors ${
+                    showComments
+                      ? "text-blue-500 hover:text-blue-600"
+                      : "text-muted-foreground hover:text-blue-500"
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (requireAuth("comment")) {
+                      handleToggleComments();
+                    }
+                  }}
+                >
+                  <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="ml-1 text-xs">{post.replies_count}</span>
+                  {/* {showComments ? (
+                    <ChevronUp className="w-2 h-2 sm:w-3 sm:h-3 ml-1" />
+                  ) : (
+                    <ChevronDown className="w-2 h-2 sm:w-3 sm:h-3 ml-1" />
+                  )} */}
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto p-1 text-muted-foreground hover:text-green-500"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (requireAuth("quote")) {
+                      onQuote?.(post);
+                    }
+                  }}
+                >
+                  <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="ml-1 text-xs">{post.quotes_count}</span>
+                </Button>
+
+                <div className="flex items-center text-muted-foreground">
+                  <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="ml-1 text-xs">{post.views_count || 0}</span>
+                </div>
+              </div>
 
               <Button
                 variant="ghost"
                 size="sm"
                 className={`h-auto p-1 ${
-                  post.is_sparked
-                    ? "text-yellow-500 hover:text-yellow-600"
-                    : "text-muted-foreground hover:text-yellow-500"
-                }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (requireAuth("spark")) {
-                    onToggleAction(post.id, "spark");
-                  }
-                }}
-              >
-                <Repeat
-                  className={`w-3 h-3 sm:w-4 sm:h-4 ${
-                    post.is_sparked ? "fill-current" : ""
-                  }`}
-                />
-                <span className="ml-1 text-xs">{post.sparks_count}</span>
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`h-auto p-1 transition-colors ${
-                  showComments
+                  post.is_bookmarked
                     ? "text-blue-500 hover:text-blue-600"
                     : "text-muted-foreground hover:text-blue-500"
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (requireAuth("comment")) {
-                    handleToggleComments();
+                  if (requireAuth("bookmark")) {
+                    onToggleAction(post.id, "bookmark");
                   }
                 }}
               >
-                <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="ml-1 text-xs">{post.replies_count}</span>
-                {showComments ? (
-                  <ChevronUp className="w-2 h-2 sm:w-3 sm:h-3 ml-1" />
-                ) : (
-                  <ChevronDown className="w-2 h-2 sm:w-3 sm:h-3 ml-1" />
-                )}
+                <Bookmark
+                  className={`w-3 h-3 sm:w-4 sm:h-4 ${
+                    post.is_bookmarked ? "fill-current" : ""
+                  }`}
+                />
               </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-auto p-1 text-muted-foreground hover:text-green-500"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (requireAuth("quote")) {
-                    onQuote?.(post);
-                  }
-                }}
-              >
-                <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="ml-1 text-xs">{post.quotes_count}</span>
-              </Button>
-
-              <div className="flex items-center text-muted-foreground">
-                <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="ml-1 text-xs">{post.views_count || 0}</span>
-              </div>
             </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`h-auto p-1 ${
-                post.is_bookmarked
-                  ? "text-blue-500 hover:text-blue-600"
-                  : "text-muted-foreground hover:text-blue-500"
-              }`}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (requireAuth("bookmark")) {
-                  onToggleAction(post.id, "bookmark");
-                }
-              }}
-            >
-              <Bookmark
-                className={`w-3 h-3 sm:w-4 sm:h-4 ${
-                  post.is_bookmarked ? "fill-current" : ""
-                }`}
-              />
-            </Button>
           </div>
           {/* コメントセクション */}
           {showComments && (
-            <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200 interactive-element">
+            <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200 interactive-element max-w-full overflow-hidden">
               {/* コメント入力フォーム */}
-              <div className="mb-3 sm:mb-4">
+              <div className="mb-3 sm:mb-4 max-w-full">
                 <CommentForm
                   currentUser={currentUser}
                   commentText={commentText}
@@ -1205,7 +1326,7 @@ export default function PostCard({
               </div>
 
               {/* コメント一覧 */}
-              <div className="space-y-3 sm:space-y-4">
+              <div className="space-y-3 sm:space-y-4 max-w-full overflow-hidden">
                 {commentsLoading ? (
                   <div className="text-center py-4 text-gray-500">
                     <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin mx-auto mb-2" />

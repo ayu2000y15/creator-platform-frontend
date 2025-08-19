@@ -1,5 +1,5 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -119,5 +119,27 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* モバイル対応のための基本スタイル */
+  html {
+    overflow-x: hidden;
+  }
+
+  body {
+    overflow-x: hidden;
+    min-width: 320px;
+  }
+
+  /* 画像の最大幅制限 */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* コンテナの横スクロール防止 */
+  .container {
+    max-width: 100%;
+    overflow-x: hidden;
   }
 }

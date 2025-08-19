@@ -58,7 +58,7 @@ export default function PostFeed() {
     () => [
       {
         key: "recommend" as const,
-        label: "おすすめ",
+        label: "全体",
         icon: Sparkles,
       },
       {
